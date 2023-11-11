@@ -1,0 +1,95 @@
+datasource db {
+  provider = "postgresql"
+
+  url = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+generator dbml {
+  provider = "prisma-dbml-generator"
+}
+
+model Config {
+  id         String    @id @default(cuid())
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  key        String
+  value      String
+  merchant   Merchant? @relation(fields: [merchantId], references: [id])
+  merchantId String?
+}
+
+model Merchant {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  configs   Config[]
+  name      String
+}
+
+model User {
+  id           String         @id @default(cuid())
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  username     String         @unique
+  wallet       Wallet?        @relation(fields: [walletId], references: [id])
+  role         Role
+  transactions Transactions[]
+  walletId     String?        @unique
+}
+
+model Wallet {
+  id           String         @id @default(cuid())
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  address      String         @unique
+  user         User?
+  Transactions Transactions[]
+}
+
+model Settlements {
+  id            String   @id @default(cuid())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  amount        String
+  txn_hash      String   @unique
+  token_address String
+  from_address  String
+  to_address    String
+}
+
+model Transactions {
+  id              String       @id @default(cuid())
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  txn_hash        String       @unique
+  from_address    String
+  txn_direction   TxnDirection
+  status          TxnStatus
+  userId          String?
+  user            User?        @relation(fields: [userId], references: [id])
+  amount          String
+  gas_fee         String?
+  currency_symbol String
+  walletId        String?
+  wallet          Wallet?      @relation(fields: [walletId], references: [id])
+}
+
+enum TxnStatus {
+  PENDING
+  FAILED
+  SUCCESS
+}
+
+enum TxnDirection {
+  INCOMING
+  OUTGOING
+}
+
+enum Role {
+  ADMIN
+  USER
+}

@@ -1,0 +1,87 @@
+//// ------------------------------------------------------
+//// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+//// ------------------------------------------------------
+
+Table Config {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  max_usdt String [not null]
+  min_usdt String [not null]
+  min_bnb String [not null]
+  max_bnb String [not null]
+  merchant_call_back_url String [not null]
+  bnb_wallet String [not null]
+  commission_vault String [not null]
+  merchant_wallet String [not null]
+  min_commission Int [not null]
+  comission_percentage Int [not null]
+}
+
+Table User {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  username String [unique, not null]
+  wallet Wallet
+  role Role [not null]
+  transactions Transactions [not null]
+  walletId String [unique]
+}
+
+Table Wallet {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  address String [unique, not null]
+  privatekey String [unique, not null]
+  user User
+  Transactions Transactions [not null]
+}
+
+Table Settlements {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  amount String [not null]
+  txn_hash String [unique, not null]
+  token_address String [not null]
+  from_address String [not null]
+  to_address String [not null]
+}
+
+Table Transactions {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  txn_hash String [unique, not null]
+  from_address String [not null]
+  txn_direction TxnDirection [not null]
+  status TxnStatus [not null]
+  userId String
+  user User
+  walletId String
+  wallet Wallet
+}
+
+Enum TxnStatus {
+  PENDING
+  FAILED
+  SUCCESS
+}
+
+Enum TxnDirection {
+  INCOMING
+  OUTGOING
+}
+
+Enum Role {
+  ADMIN
+  USER
+}
+
+Ref: User.walletId - Wallet.id
+
+Ref: Transactions.userId > User.id
+
+Ref: Transactions.walletId > Wallet.id
