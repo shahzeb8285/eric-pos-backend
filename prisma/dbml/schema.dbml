@@ -6,16 +6,20 @@ Table Config {
   id String [pk]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
-  max_usdt String [not null]
-  min_usdt String [not null]
-  min_bnb String [not null]
-  max_bnb String [not null]
-  merchant_call_back_url String [not null]
-  bnb_wallet String [not null]
-  commission_vault String [not null]
-  merchant_wallet String [not null]
-  min_commission Int [not null]
-  comission_percentage Int [not null]
+  key String [not null]
+  value String [not null]
+  merchant Merchant
+  merchantId String
+}
+
+Table Merchant {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  configs Config [not null]
+  name String [unique, not null]
+  users User [not null]
+  password String [not null]
 }
 
 Table User {
@@ -24,64 +28,80 @@ Table User {
   updatedAt DateTime [not null]
   username String [unique, not null]
   wallet Wallet
-  role Role [not null]
-  transactions Transactions [not null]
+  incomingTransactions IncomingTransactions [not null]
+  outgoingTransactions OutgoingTransactions [not null]
   walletId String [unique]
+  merchantId String
+  merchant Merchant
+}
+
+Table Admin {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  username String [unique, not null]
+  password String [not null]
 }
 
 Table Wallet {
-  id String [pk]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
-  address String [unique, not null]
-  privatekey String [unique, not null]
+  address String [pk]
   user User
-  Transactions Transactions [not null]
+  incomingTransactions IncomingTransactions [not null]
+  outgoingTransactions OutgoingTransactions [not null]
+  lastAssignedAt DateTime [not null]
+  pathId Int [not null]
 }
 
 Table Settlements {
-  id String [pk]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   amount String [not null]
-  txn_hash String [unique, not null]
-  token_address String [not null]
-  from_address String [not null]
-  to_address String [not null]
+  txnHash String [pk]
+  currencySymbol String [not null]
+  fromAddress String [not null]
+  toAddress String [not null]
 }
 
-Table Transactions {
-  id String [pk]
+Table OutgoingTransactions {
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
-  txn_hash String [unique, not null]
-  from_address String [not null]
-  txn_direction TxnDirection [not null]
-  status TxnStatus [not null]
+  txnHash String [pk]
+  toAddress String [not null]
   userId String
   user User
+  amount String [not null]
+  gasFee String
+  currencySymbol String [not null]
   walletId String
   wallet Wallet
 }
 
-Enum TxnStatus {
-  PENDING
-  FAILED
-  SUCCESS
+Table IncomingTransactions {
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  txnHash String [pk]
+  fromAddress String [not null]
+  userId String
+  user User
+  amount String [not null]
+  gasFee String
+  currencySymbol String [not null]
+  walletId String
+  wallet Wallet
 }
 
-Enum TxnDirection {
-  INCOMING
-  OUTGOING
-}
+Ref: Config.merchantId > Merchant.id
 
-Enum Role {
-  ADMIN
-  USER
-}
+Ref: User.walletId - Wallet.address
 
-Ref: User.walletId - Wallet.id
+Ref: User.merchantId > Merchant.id
 
-Ref: Transactions.userId > User.id
+Ref: OutgoingTransactions.userId > User.id
 
-Ref: Transactions.walletId > Wallet.id
+Ref: OutgoingTransactions.walletId > Wallet.address
+
+Ref: IncomingTransactions.userId > User.id
+
+Ref: IncomingTransactions.walletId > Wallet.address

@@ -1,9 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Param} from '@nestjs/common';
 import { WalletService } from './wallet.service';
-import { CreateWalletDto } from './dto/create-wallet.dto';
-import { UpdateWalletDto } from './dto/update-wallet.dto';
+import { ApiTags } from '@nestjs/swagger';
 
 @Controller('wallet')
+@ApiTags("wallet")
 export class WalletController {
   constructor(private readonly walletService: WalletService) {}
 
@@ -13,18 +13,13 @@ export class WalletController {
     return this.walletService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.walletService.findOne(+id);
+
+  @Get("/balance/:address")
+  getbalance(@Param('address') address: string) {
+    return this.walletService.getBalancesByWallet(address)
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateWalletDto: UpdateWalletDto) {
-    return this.walletService.update(+id, updateWalletDto);
-  }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.walletService.remove(+id);
-  }
+
+
 }

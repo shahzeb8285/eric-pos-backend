@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CreateWalletDto } from './dto/create-wallet.dto';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
-import { Wallet as WalletEthers, HDNodeWallet, ethers, getDefaultProvider } from 'ethers';
+import { AbstractProvider, HDNodeWallet, getDefaultProvider } from 'ethers';
 import { PrismaService } from 'nestjs-prisma';
 import { SETTINGS, getRPC } from 'src/settings';
 import {
@@ -10,13 +10,16 @@ import {
   ContractCallContext,
 } from 'ethereum-multicall';
 
-import IERC20ABI from "../abis/IERC20.json"
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { WalletCreatedEvent } from 'src/events/wallet.create.event';
+import IERC20 from 'src/abis/IERC20';
 
 @Injectable()
 export class WalletService {
-  private ethersProvider;
-  private rpc;
+  private ethersProvider: AbstractProvider;
+  private rpc: string;
   constructor(private prisma: PrismaService,
+    private eventEmitter: EventEmitter2
   ) {
 
     const rpc = getRPC()
@@ -25,6 +28,29 @@ export class WalletService {
   }
 
 
+  async getUserIdByWallet(address: string) {
+    const resp = await this.prisma.wallet.findFirst({
+      where: {
+        address
+      },
+      include: {
+        user: true
+      }
+    })
+    if (resp && resp.user) {
+      return resp.user.id
+    }
+  }
+  async getAllWalletAddresses() {
+    const resp = await this.prisma.wallet.findMany({
+      select: {
+        address: true
+      }
+    })
+    return resp.map((item) => {
+      return item.address
+    })
+  }
   async getBalancesByWallet(wallet_address: string) {
 
     const multicall = new Multicall({
@@ -34,38 +60,18 @@ export class WalletService {
 
 
 
-    
+
     const callContexts: ContractCallContext[] = [];
-    
+
     for (const asset of SETTINGS.ACCEPTED_TOKENS) {
-      if (asset.address !== "0x0000000000000000000000000000000000000000") {
-        callContexts.push(
-          {
-            reference: asset.address,
-            abi: [{
-              "constant": true,
-              "inputs": [
-                {
-                  "name": "_owner",
-                  "type": "address"
-                }
-              ],
-              "name": "balanceOf",
-              "outputs": [
-                {
-                  "name": "balance",
-                  "type": "uint256"
-                }
-              ],
-              "payable": false,
-              "stateMutability": "view",
-              "type": "function"
-            },],
-            contractAddress: asset.address,
-            calls: [{ reference: 'balanceOf', methodName: 'balanceOf', methodParameters: [wallet_address] }]
-          }
-        )
-      }
+      callContexts.push(
+        {
+          reference: asset.address,
+          abi: IERC20,
+          contractAddress: asset.address,
+          calls: [{ reference: 'balanceOf', methodName: 'balanceOf', methodParameters: [wallet_address] }]
+        }
+      )
     }
 
 
@@ -75,34 +81,40 @@ export class WalletService {
     const results: ContractCallResults = await multicall.call(callContexts);
 
     for (const asset of SETTINGS.ACCEPTED_TOKENS) {
-      if (asset.address === "0x0000000000000000000000000000000000000000") {
-        balances.push({
-          ...asset,
-          balance:nativeBalance.toString()
-        })
-      } else {
-        const balance = Number(results.results[asset.address].callsReturnContext[0].returnValues[0].hex).toString()
-        balances.push({
-          ...asset,
 
-          //@ts-ignore
-          balance:balance
-        })
-      }
+      const balance = BigInt(results.results[asset.address].callsReturnContext[0].returnValues[0].hex).toString()
+      balances.push({
+        ...asset,
+        //@ts-ignore
+        balance: balance
+      })
+
     }
+
+    balances.push({
+      ...SETTINGS.NATIVE,
+      balance: nativeBalance.toString()
+    })
+
     return balances
   }
 
   async generateWallet() {
     const mnemonics = process.env.MASTER_MNEMONIC
-    const totalWalletCounts = await this.prisma.wallet.count()
-    const path = `m/44'/60'/1'/0/${totalWalletCounts}`;
+    const pathId = await this.prisma.wallet.count()
+    const path = `m/44'/60'/1'/0/${pathId}`;
 
     const wallet = HDNodeWallet.fromPhrase(mnemonics, "", path);
 
     const address = wallet.address
-    const privateKey = wallet.privateKey
-    return { address, privateKey }
+    const event = new WalletCreatedEvent()
+    event.walletAddress = address;
+    this.eventEmitter.emit(
+      'wallet.created',
+      event
+    );
+
+    return { address, pathId }
   }
 
 
@@ -115,11 +127,12 @@ export class WalletService {
     })
 
     if (!nonAssignedWallet) {
-      const { address, privateKey } = await this.generateWallet()
+      const { address, pathId } = await this.generateWallet()
       nonAssignedWallet = await this.prisma.wallet.create({
         data: {
           address: address,
-          privatekey: privateKey,
+          lastAssignedAt: new Date(),
+          pathId
 
         }
       })
@@ -127,7 +140,7 @@ export class WalletService {
 
     const finalWallet = await this.prisma.wallet.update({
       where: {
-        id: nonAssignedWallet.id
+        address: nonAssignedWallet.address
       },
       data: {
         user: {

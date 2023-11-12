@@ -27,69 +27,90 @@ model Merchant {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   configs   Config[]
-  name      String
+  name      String   @unique
+  users     User[]
+  password  String
 }
 
 model User {
-  id           String         @id @default(cuid())
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  username     String         @unique
-  wallet       Wallet?        @relation(fields: [walletId], references: [id])
-  role         Role
-  transactions Transactions[]
-  walletId     String?        @unique
+  id                   String                 @id @default(cuid())
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  username             String                 @unique
+  wallet               Wallet?                @relation(fields: [walletId], references: [address])
+  incomingTransactions IncomingTransactions[]
+  outgoingTransactions OutgoingTransactions[]
+
+  walletId   String?   @unique
+  merchantId String?
+  merchant   Merchant? @relation(fields: [merchantId], references: [id])
+}
+
+model Admin {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  username  String   @unique
+  password  String
 }
 
 model Wallet {
-  id           String         @id @default(cuid())
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  address      String         @unique
-  user         User?
-  Transactions Transactions[]
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  address              String                 @id @unique
+  user                 User?
+  incomingTransactions IncomingTransactions[]
+  outgoingTransactions OutgoingTransactions[]
+
+  lastAssignedAt DateTime
+  pathId         Int
+  balances       Balances?
 }
 
 model Settlements {
-  id            String   @id @default(cuid())
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  amount        String
-  txn_hash      String   @unique
-  token_address String
-  from_address  String
-  to_address    String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  amount         String
+  txnHash        String   @id @unique
+  currencySymbol String
+  fromAddress    String
+  toAddress      String
 }
 
-model Transactions {
-  id              String       @id @default(cuid())
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-  txn_hash        String       @unique
-  from_address    String
-  txn_direction   TxnDirection
-  status          TxnStatus
-  userId          String?
-  user            User?        @relation(fields: [userId], references: [id])
-  amount          String
-  gas_fee         String?
-  currency_symbol String
-  walletId        String?
-  wallet          Wallet?      @relation(fields: [walletId], references: [id])
+model Balances {
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  walletAddress  String   @id @unique
+  currencySymbol String
+  balance        String
+  wallet Wallet? @relation(fields: [walletAddress], references: [address])
 }
 
-enum TxnStatus {
-  PENDING
-  FAILED
-  SUCCESS
+
+model OutgoingTransactions {
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  txnHash        String   @id @unique
+  toAddress      String
+  userId         String?
+  user           User?    @relation(fields: [userId], references: [id])
+  amount         String
+  gasFee         String?
+  currencySymbol String
+  walletId       String?
+  wallet         Wallet?  @relation(fields: [walletId], references: [address])
 }
 
-enum TxnDirection {
-  INCOMING
-  OUTGOING
-}
-
-enum Role {
-  ADMIN
-  USER
+model IncomingTransactions {
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  txnHash        String   @id @unique
+  fromAddress    String
+  userId         String?
+  user           User?    @relation(fields: [userId], references: [id])
+  amount         String
+  gasFee         String?
+  currencySymbol String
+  walletId       String?
+  wallet         Wallet?  @relation(fields: [walletId], references: [address])
 }

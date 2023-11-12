@@ -1,15 +1,15 @@
 const SETTINGS = {
+    NATIVE:  {
+        symbol: "BNB",
+        decimals:18
+    },
     ACCEPTED_TOKENS: [
         {
-            symbol: "USDT",
-            address: "0x55d398326f99059ff775485246999027b3197955",
-            decimals:18
+            symbol: "IDRT",
+            address: "0x66207E39bb77e6B99aaB56795C7c340C08520d83",
+            decimals:2
         },
-        {
-            SYMBOL: "BNB",
-            address: "0x0000000000000000000000000000000000000000",
-            decimals:18
-        }
+     
     ],
     RPCs: ["https://bsc-dataseed1.defibit.io","https://bsc-dataseed3.ninicoin.io"],
     CHAIN_ID:56

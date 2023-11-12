@@ -13,7 +13,18 @@ async function bootstrap() {
     .setTitle('POS Apis')
     .setDescription('The POS API description')
     .setVersion('1.0')
-    .addTag('pos')
+    .addBearerAuth(
+      { 
+        // I was also testing it without prefix 'Bearer ' before the JWT
+        description: `[just text field] Please enter token in following format: Bearer <JWT>`,
+        name: 'Authorization',
+        bearerFormat: 'Bearer', // I`ve tested not to use this field, but the result was the same
+        scheme: 'Bearer',
+        type: 'http', // I`ve attempted type: 'apiKey' too
+        in: 'Header'
+      }
+    )
+    
     .build();
     const options: SwaggerDocumentOptions = {
       deepScanRoutes: true
@@ -21,6 +32,6 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config,options);
   SwaggerModule.setup('api', app, document);
 
-  await app.listen(3000);
+  await app.listen(process.env.PORT || 3000);
 }
 bootstrap();
