@@ -4,13 +4,12 @@ import { SETTINGS, getRPC } from 'src/settings';
 import IERC20ABI from "src/abis/IERC20";
 import { WalletService } from 'src/wallet/wallet.service';
 import { OnEvent } from '@nestjs/event-emitter';
-import { WalletCreatedEvent } from 'src/events/wallet.create.event';
+import { WalletCreatedEvent } from 'src/events/wallet.event';
 import { TransactionsService } from 'src/transactions/transactions.service';
 import { CreateIncomingTransactionDto,CreateOutgoingTransactionDto } from 'src/transactions/dto/create-transaction.dto';
 @Injectable()
 export class WatcherService {
 
-    lastSyncedBlock: null | number;
     rpc: string;
     contracts: Contract[];
     ethersProvider: AbstractProvider;
@@ -18,7 +17,6 @@ export class WatcherService {
 
     constructor(private walletService: WalletService,
         private transactionService: TransactionsService) {
-        this.lastSyncedBlock = null;
         const rpc = getRPC()
         this.rpc = rpc
         this.ethersProvider = getDefaultProvider(rpc);

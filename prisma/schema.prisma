@@ -62,30 +62,37 @@ model Wallet {
   incomingTransactions IncomingTransactions[]
   outgoingTransactions OutgoingTransactions[]
 
-  lastAssignedAt DateTime
-  pathId         Int
-  balances       Balances?
+  lastAssignedAt       DateTime
+  pathId               Int
+  balances             Balances?
+  isReadyForSettlement Boolean       @default(false)
+  settlements          Settlements[]
 }
 
 model Settlements {
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  amount         String
-  txnHash        String   @id @unique
-  currencySymbol String
-  fromAddress    String
-  toAddress      String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  settlementTxnHash String   @id @unique
+  settlementAmount  String
+  settlementAddress String
+  currencySymbol    String
+  commissionAmount  String
+  commissionTxnHash String
+  commissionAddress String
+  totalGasFeePaid   String
+  fromWallet        Wallet   @relation(fields: [fromWalletAddress], references: [address])
+  fromWalletAddress String
 }
 
 model Balances {
+  id             String   @id @default(cuid())
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-  walletAddress  String   @id @unique
+  walletAddress  String   @unique
   currencySymbol String
   balance        String
-  wallet Wallet? @relation(fields: [walletAddress], references: [address])
+  wallet         Wallet?  @relation(fields: [walletAddress], references: [address])
 }
-
 
 model OutgoingTransactions {
   createdAt      DateTime @default(now())
@@ -113,4 +120,5 @@ model IncomingTransactions {
   currencySymbol String
   walletId       String?
   wallet         Wallet?  @relation(fields: [walletId], references: [address])
+  isOrphanTxn    Boolean @default(false)
 }

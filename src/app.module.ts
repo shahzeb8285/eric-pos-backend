@@ -12,6 +12,9 @@ import { AdminModule } from './admin/admin.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { TransactionsModule } from './transactions/transactions.module';
 import { SettlementModule } from './settlement/settlement.module';
+import { BalancesModule } from './balances/balances.module';
+import { SettlementService } from './settlement/settlement.service';
+import { WalletService } from './wallet/wallet.service';
 
 @Module({
   imports: [
@@ -37,8 +40,9 @@ import { SettlementModule } from './settlement/settlement.module';
   AdminModule,
   TransactionsModule,
   SettlementModule,
+  BalancesModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService,SettlementService,WalletService],
 })
 export class AppModule {}

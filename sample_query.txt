@@ -1,0 +1,17 @@
+{
+  "configs": [
+   {"key":"maxIDRT","value":"1000000000000000000000"},
+   {"key":"minIDRT","value":"500000000000000000000"},
+   {"key":"minBnb","value":"10000000000000000"},
+   {"key":"maxBnb","value":"5000000000000000"},
+   {"key":"merchantCallBackUrl","value":"https://nothing.com"},
+   {"key":"bnbWallet","value":"0xd34e2294289bc709D8d62Ae23235346279741066"},
+   {"key":"commissionWallet","value":"0x22b856cb8e6F074173C238Be35174A122be095bb"},
+   {"key":"merchantWallet","value":"0x6AFf28f88A85D17aA04EeCCa83611b6eaB6d987a"},
+   {"key":"minCommission","value":"1000000000000000000"},
+   {"key":"commissionPercentage","value":"5"}
+  ],
+  "name": "merchant1",
+  "password": "Merchant@123"
+}
+

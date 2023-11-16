@@ -1,19 +1,20 @@
 const SETTINGS = {
+    WALLET_PATH: "m/44'/60'/1'/0/",
+    WALLET_DETACH_TIME:24*60*60, // 24 hours
     NATIVE:  {
         symbol: "BNB",
         decimals:18
     },
     ACCEPTED_TOKENS: [
         {
-            symbol: "IDRT",
-            address: "0x66207E39bb77e6B99aaB56795C7c340C08520d83",
-            decimals:2
+            symbol: "USDT",
+            address: "0xAf356b653F324D919198e49f24485983331172bB",
+            decimals:18
         },
      
     ],
-    RPCs: ["https://bsc-dataseed1.defibit.io","https://bsc-dataseed3.ninicoin.io"],
-    CHAIN_ID:56
-
+    RPCs: ["https://data-seed-prebsc-1-s1.bnbchain.org:8545","https://data-seed-prebsc-2-s1.bnbchain.org:8545"],
+    CHAIN_ID:97
 }
 
 const getRPC = () => {

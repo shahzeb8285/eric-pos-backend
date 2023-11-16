@@ -11,11 +11,14 @@ import {
 } from 'ethereum-multicall';
 
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { WalletCreatedEvent } from 'src/events/wallet.create.event';
+import { WalletCreatedEvent } from 'src/events/wallet.event';
 import IERC20 from 'src/abis/IERC20';
+import moment from 'moment';
 
 @Injectable()
 export class WalletService {
+
+
   private ethersProvider: AbstractProvider;
   private rpc: string;
   constructor(private prisma: PrismaService,
@@ -27,6 +30,43 @@ export class WalletService {
     this.ethersProvider = getDefaultProvider(rpc)
   }
 
+  async markSettlement(address: string, isReadyForSettlement: boolean) {
+    const resp = await this.prisma.wallet.update({
+      data: {
+        isReadyForSettlement,
+      },
+      where: {
+        address
+      }
+    })
+  }
+
+
+  async detachWallets() {
+    const targetDate = moment().subtract(SETTINGS.WALLET_DETACH_TIME);
+
+    const allAssignedWallet = await this.prisma.wallet.findMany({
+      where: {
+        lastAssignedAt: {
+          lte: targetDate.toDate()
+        },
+        isReadyForSettlement: false
+      }
+    })
+
+    allAssignedWallet.map(async (item) => {
+      await this.prisma.wallet.update({
+        where: {
+          address: item.address,
+        },
+        data: {
+          lastAssignedAt: null,
+          user: null,
+
+        }
+      })
+    })
+  }
 
   async getUserIdByWallet(address: string) {
     const resp = await this.prisma.wallet.findFirst({
@@ -99,10 +139,12 @@ export class WalletService {
     return balances
   }
 
+
+
   async generateWallet() {
     const mnemonics = process.env.MASTER_MNEMONIC
     const pathId = await this.prisma.wallet.count()
-    const path = `m/44'/60'/1'/0/${pathId}`;
+    const path = `${SETTINGS.WALLET_PATH}${pathId}`;
 
     const wallet = HDNodeWallet.fromPhrase(mnemonics, "", path);
 
@@ -156,18 +198,47 @@ export class WalletService {
 
 
   findAll() {
-    return `This action returns all wallet`;
+    return this.prisma.wallet.findMany({
+      include: {
+        balances: true
+      }
+    })
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} wallet`;
+  findAllUnsettledWallets() {
+    return this.prisma.wallet.findMany({
+      where: {
+        isReadyForSettlement: true,
+      },
+      include: {
+        user: {
+          select: {
+            merchant: {
+              select: {
+                configs: true
+              }
+            }
+          }
+        }
+      }
+    })
   }
 
-  update(id: number, updateWalletDto: UpdateWalletDto) {
-    return `This action updates a #${id} wallet`;
+
+
+
+
+  findOne(address: string) {
+    return this.prisma.wallet.findFirst({
+      where: {
+        address: address,
+
+      },
+      include: {
+        balances: true
+      }
+    })
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} wallet`;
-  }
+
 }

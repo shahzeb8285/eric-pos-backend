@@ -1,13 +1,15 @@
 
 
 export class CreateSettlementDto {
-    txnHash: string
-    fromAddress: string
-    amount: string
-    gasFee: string
+    settlementTxnHash: string
+    settlementAddress: string
+    settlementAmount: string
     currencySymbol: string
-    walletId: string
+    commissionAmount: string
+    commissionTxnHash: string
+    commissionAddress: string
+    totalGasFeePaid: string
+    fromWalletAddress: string
+    
 }
-
-
 

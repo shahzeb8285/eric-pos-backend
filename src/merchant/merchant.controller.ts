@@ -17,6 +17,7 @@ export class MerchantController {
     if (!req.user.isAdmin) {
       throw new UnauthorizedException();
     }
+    
     return this.merchantService.create(createMerchantDto);
   }
 

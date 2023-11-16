@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadGatewayException} from '@nestjs/common';
 import { CreateMerchantDto } from './dto/create-merchant.dto';
 import { UpdateMerchantDto } from './dto/update-merchant.dto';
 import { PrismaService } from 'nestjs-prisma';
 import { Prisma } from '@prisma/client';
 import { PasswordService } from 'src/password.service';
+import requiredMerchantConfig from './required.merchant.config';
 
 @Injectable()
 export class MerchantService {
@@ -13,8 +14,31 @@ export class MerchantService {
   
   
 
+  getMissingConfigItems(configs) {
+    const allConfig = [...requiredMerchantConfig]
+    const providedConfigKeys = configs.map((item) => {
+      return item.key
+    })
+    
+
+    const missingItems =  allConfig.filter(val => !providedConfigKeys.includes(val));
+    return missingItems
+  }
+
   async create(createMerchantDto: CreateMerchantDto) {
     const hashedPassword = await this.passwordService.hashPassword(createMerchantDto.password)
+
+    if (!createMerchantDto.configs) {
+      throw new BadGatewayException(`Merchant config does not have all required keys ${requiredMerchantConfig.toString()}`);
+
+    }
+    const missingConfigItems = this.getMissingConfigItems(createMerchantDto.configs);
+
+    if (missingConfigItems.length >0) {
+        throw new BadGatewayException(`Merchant config does not have all required keys ${missingConfigItems.toString()}`);
+    }
+
+    
     const resp = await this.prisma.merchant.create({
       data: {
         ...createMerchantDto,

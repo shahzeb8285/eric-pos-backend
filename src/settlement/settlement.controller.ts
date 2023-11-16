@@ -1,13 +1,23 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Redirect, Query } from '@nestjs/common';
 import { SettlementService } from './settlement.service';
 import { CreateSettlementDto } from './dto/create-settlement.dto';
 import { UpdateSettlementDto } from './dto/update-settlement.dto';
 import { ApiTags } from '@nestjs/swagger';
+import { Cron } from '@nestjs/schedule';
+import { WalletService } from 'src/wallet/wallet.service';
+import { Prisma } from '@prisma/client';
+import { HDNodeWallet, ethers } from 'ethers';
+import IERC20 from 'src/abis/IERC20';
+import { SETTINGS, getRPC } from 'src/settings';
 
 @Controller('settlement')
 @ApiTags("settlement")
 export class SettlementController {
-  constructor(private readonly settlementService: SettlementService) {}
+  constructor(private readonly settlementService: SettlementService,
+    private readonly walletService: WalletService) {
+
+    this.handleCron()
+  }
 
 
   @Get()
@@ -18,9 +28,25 @@ export class SettlementController {
   @Get(':txnHash')
   findOne(@Param('txnHash') txnHash: string) {
     return this.settlementService.findOne(txnHash);
+
   }
 
+  // running every 5 minutes
+  // is should be more than 2 mins because BSC has 2 sec block time
+  @Cron('*/5 * * * *')
+  async handleCron() {
+    await this.settlementService.settleWallets()
+    
+  }
+
+
+  
   
 
   
+
+
+
+ 
+
 }
