@@ -5,6 +5,6 @@ import { Logger } from 'winston';
 
 @Module({
   controllers: [WalletController],
-  providers: [WalletService,Logger],
+  providers: [WalletService, Logger],
 })
-export class WalletModule {}
+export class WalletModule { }

@@ -11,8 +11,8 @@ export class AppController {
 
   @Get('/manualSettlement')
  async getPing() {
+  this.logger.log({ level: "info", message: "Triggering manual Settlement", });
     await this.settlementServide.settleWallets()
-    this.logger.log({ level: "warn", message: "This is warn level", });
     return {message:"OK"}
   }
 }

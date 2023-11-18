@@ -12,9 +12,9 @@ import { AdminService } from 'src/admin/admin.service';
     JwtModule.register({
       global: true,
       secret: process.env.JWT_ACCESS_SECRET,
-      signOptions: { expiresIn:  process.env.JWT_EXPIRY_TIME },
+      signOptions: { expiresIn: process.env.JWT_EXPIRY_TIME },
     }),],
   controllers: [AuthController],
-  providers: [AuthService,MerchantService,PasswordService,AdminService]
+  providers: [AuthService, MerchantService, PasswordService, AdminService]
 })
-export class AuthModule {}
+export class AuthModule { }

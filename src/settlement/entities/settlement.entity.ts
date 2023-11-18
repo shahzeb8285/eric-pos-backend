@@ -1,1 +1,1 @@
-export class Settlement {}
+export class Settlement { }

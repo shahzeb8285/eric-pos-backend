@@ -8,9 +8,6 @@ export class CreateIncomingTransactionDto {
     walletId: string
 }
 
-
-
-
 export class CreateOutgoingTransactionDto {
     txnHash: string
     toAddress: string
@@ -19,5 +16,3 @@ export class CreateOutgoingTransactionDto {
     currencySymbol: string
     walletId: string
 }
-
-

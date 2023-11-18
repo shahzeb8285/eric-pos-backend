@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CreateIncomingTransactionDto, CreateOutgoingTransactionDto } from './dto/create-transaction.dto';
 import { PrismaService } from 'nestjs-prisma';
 import { WalletService } from 'src/wallet/wallet.service';
@@ -8,19 +8,19 @@ import { IncomingTransactionEvent } from 'src/events/incoming.txn.create.event';
 
 @Injectable()
 export class TransactionsService {
-  constructor(private prisma: PrismaService,
-    private walletService: WalletService,
-    private eventEmitter: EventEmitter2
-  ) { }
+  private logger = new Logger(TransactionsService.name);
+
+  constructor(private prisma: PrismaService, private walletService: WalletService, private eventEmitter: EventEmitter2) { }
 
   async createIncoming(createTransactionDto: CreateIncomingTransactionDto) {
+    this.logger.log({ level: "info", message: `Creating incoming transaction ${createTransactionDto.txnHash} for wallet ${createTransactionDto.walletId}` });
     const userId = await this.walletService.getUserIdByWallet(createTransactionDto.walletId);
 
     const txn = await this.prisma.incomingTransactions.create({
       data: {
         ...createTransactionDto,
         userId,
-        isOrphanTxn:userId?false:true
+        isOrphanTxn: userId ? false : true
       }
     });
 
@@ -54,10 +54,8 @@ export class TransactionsService {
     })
   }
 
-
-
-
   async createOutgoing(createTransactionDto: CreateOutgoingTransactionDto) {
+    this.logger.log({ level: "info", message: `Creating outgoing transaction ${createTransactionDto.txnHash} for wallet ${createTransactionDto.walletId}` });
     const userId = await this.walletService.getUserIdByWallet(createTransactionDto.walletId);
     const txn = await this.prisma.outgoingTransactions.create({
       data: {
@@ -65,8 +63,10 @@ export class TransactionsService {
         userId,
       }
     })
+
     const event = new OutgoingTransactionEvent()
     event.data = txn;
+    event.walletAddress = createTransactionDto.walletId
     this.eventEmitter.emit(
       'outgoingtxn.created',
       event
@@ -94,10 +94,6 @@ export class TransactionsService {
     })
   }
 
-  // findAllOutgoing() {
-  //   return this.prisma.outgoingTransactions.findMany({})
-  // }
-
   async findAll() {
     const incomingTxns = await this.prisma.incomingTransactions.findMany()
     const outgoingTxns = await this.prisma.outgoingTransactions.findMany()
@@ -107,5 +103,4 @@ export class TransactionsService {
       outgoingTxns
     }
   }
-
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { AbstractProvider, Contract, ethers, getDefaultProvider } from 'ethers';
 import { SETTINGS, getRPC } from 'src/settings';
 import IERC20ABI from "src/abis/IERC20";
@@ -6,26 +6,23 @@ import { WalletService } from 'src/wallet/wallet.service';
 import { OnEvent } from '@nestjs/event-emitter';
 import { WalletCreatedEvent } from 'src/events/wallet.event';
 import { TransactionsService } from 'src/transactions/transactions.service';
-import { CreateIncomingTransactionDto,CreateOutgoingTransactionDto } from 'src/transactions/dto/create-transaction.dto';
+import { CreateIncomingTransactionDto, CreateOutgoingTransactionDto } from 'src/transactions/dto/create-transaction.dto';
 @Injectable()
 export class WatcherService {
+    private logger = new Logger(WatcherService.name);
 
     rpc: string;
     contracts: Contract[];
     ethersProvider: AbstractProvider;
     globalWalletAddresses: string[]
 
-    constructor(private walletService: WalletService,
-        private transactionService: TransactionsService) {
+    constructor(private walletService: WalletService, private transactionService: TransactionsService) {
         const rpc = getRPC()
         this.rpc = rpc
         this.ethersProvider = getDefaultProvider(rpc);
         this.contracts = this.prepareContracts(this.ethersProvider);
         this.startListening()
     }
-
-
-
 
     prepareContracts(provider: AbstractProvider) {
         const contracts = [];
@@ -41,8 +38,8 @@ export class WatcherService {
         return this.globalWalletAddresses.indexOf(address) !== -1
     }
 
-    getCurrencySymbolByContract(contractAddress:string) {
-        const token =  SETTINGS.ACCEPTED_TOKENS.find((currency) => {
+    getCurrencySymbolByContract(contractAddress: string) {
+        const token = SETTINGS.ACCEPTED_TOKENS.find((currency) => {
             return currency.address.toLowerCase() === contractAddress.toLowerCase()
         })
         if (token) {
@@ -50,9 +47,12 @@ export class WatcherService {
         }
         return contractAddress;
     }
+
     async validateAndSaveTxn(to: string, amount: Number, from: string, transactionHash: string, contractAddress: string) {
-        
+        this.logger.debug({ level: "debug", message: `Received and validating transaction ${transactionHash}` });
+
         if (this.isValidWallet(to)) {
+            this.logger.log({ level: "info", message: `Incoming Transaction ${transactionHash} is valid` });
             const payload: CreateIncomingTransactionDto = new CreateIncomingTransactionDto();
             payload.amount = amount.toString()
             payload.currencySymbol = this.getCurrencySymbolByContract(contractAddress);
@@ -61,9 +61,9 @@ export class WatcherService {
             payload.txnHash = transactionHash;
             payload.gasFee = "-"
             await this.transactionService.createIncoming(payload)
-            // invoke merchant call back 
-
+            // todo: Shahzeb invoke merchant call back 
         } else if (this.isValidWallet(from)) {
+            this.logger.log({ level: "info", message: `Outgoing Transaction ${transactionHash} is valid` });
             const payload: CreateOutgoingTransactionDto = new CreateOutgoingTransactionDto();
             payload.amount = amount.toString()
             payload.currencySymbol = this.getCurrencySymbolByContract(contractAddress);
@@ -72,12 +72,7 @@ export class WatcherService {
             payload.txnHash = transactionHash;
             payload.gasFee = "-"
             await this.transactionService.createOutgoing(payload)
-
         }
-
-
-       
-        
     }
 
     @OnEvent('wallet.created')
@@ -86,7 +81,6 @@ export class WatcherService {
         addresses.push(payload.walletAddress);
         this.globalWalletAddresses = addresses;
     }
-
 
     async startListening() {
         this.globalWalletAddresses = await this.walletService.getAllWalletAddresses()
@@ -97,9 +91,6 @@ export class WatcherService {
             });
         })
     }
-
-    
-
 }
 
 

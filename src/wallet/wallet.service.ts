@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { CreateWalletDto } from './dto/create-wallet.dto';
-import { UpdateWalletDto } from './dto/update-wallet.dto';
 import { AbstractProvider, HDNodeWallet, getDefaultProvider } from 'ethers';
 import { PrismaService } from 'nestjs-prisma';
 import { SETTINGS, getRPC } from 'src/settings';
@@ -17,14 +16,10 @@ import moment from 'moment';
 
 @Injectable()
 export class WalletService {
-
-
   private ethersProvider: AbstractProvider;
   private rpc: string;
-  constructor(private prisma: PrismaService,
-    private eventEmitter: EventEmitter2
-  ) {
 
+  constructor(private prisma: PrismaService, private eventEmitter: EventEmitter2) {
     const rpc = getRPC()
     this.rpc = rpc
     this.ethersProvider = getDefaultProvider(rpc)
@@ -40,7 +35,6 @@ export class WalletService {
       }
     })
   }
-
 
   async detachWallets() {
     const targetDate = moment().subtract(SETTINGS.WALLET_DETACH_TIME);
@@ -62,7 +56,6 @@ export class WalletService {
         data: {
           lastAssignedAt: null,
           user: null,
-
         }
       })
     })
@@ -81,6 +74,7 @@ export class WalletService {
       return resp.user.id
     }
   }
+
   async getAllWalletAddresses() {
     const resp = await this.prisma.wallet.findMany({
       select: {
@@ -91,15 +85,12 @@ export class WalletService {
       return item.address
     })
   }
-  async getBalancesByWallet(wallet_address: string) {
 
+  async getBalancesByWallet(wallet_address: string) {
     const multicall = new Multicall({
       tryAggregate: true,
       nodeUrl: this.rpc,
     });
-
-
-
 
     const callContexts: ContractCallContext[] = [];
 
@@ -107,13 +98,12 @@ export class WalletService {
       callContexts.push(
         {
           reference: asset.address,
-          abi: IERC20,
+          abi: IERC20,  //todo: Shahzeb need to update abi for new tokens?
           contractAddress: asset.address,
           calls: [{ reference: 'balanceOf', methodName: 'balanceOf', methodParameters: [wallet_address] }]
         }
       )
     }
-
 
     const balances = [];
     const nativeBalance = await this.ethersProvider.getBalance(wallet_address);
@@ -121,14 +111,12 @@ export class WalletService {
     const results: ContractCallResults = await multicall.call(callContexts);
 
     for (const asset of SETTINGS.ACCEPTED_TOKENS) {
-
       const balance = BigInt(results.results[asset.address].callsReturnContext[0].returnValues[0].hex).toString()
       balances.push({
         ...asset,
         //@ts-ignore
         balance: balance
       })
-
     }
 
     balances.push({
@@ -138,8 +126,6 @@ export class WalletService {
 
     return balances
   }
-
-
 
   async generateWallet() {
     const mnemonics = process.env.MASTER_MNEMONIC
@@ -159,9 +145,7 @@ export class WalletService {
     return { address, pathId }
   }
 
-
   async assignWallet(createWalletDto: CreateWalletDto) {
-
     let nonAssignedWallet = await this.prisma.wallet.findFirst({
       where: {
         user: null
@@ -175,7 +159,6 @@ export class WalletService {
           address: address,
           lastAssignedAt: new Date(),
           pathId
-
         }
       })
     }
@@ -194,8 +177,6 @@ export class WalletService {
     })
     return { address: finalWallet.address };
   }
-
-
 
   findAll() {
     return this.prisma.wallet.findMany({
@@ -224,21 +205,14 @@ export class WalletService {
     })
   }
 
-
-
-
-
   findOne(address: string) {
     return this.prisma.wallet.findFirst({
       where: {
         address: address,
-
       },
       include: {
         balances: true
       }
     })
   }
-
-
 }

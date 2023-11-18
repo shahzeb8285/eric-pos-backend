@@ -1,13 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { CreateBalanceDto } from './dto/create-balance.dto';
-import { UpdateBalanceDto } from './dto/update-balance.dto';
 import { PrismaService } from 'nestjs-prisma';
 
 @Injectable()
 export class BalancesService {
   constructor(private prisma: PrismaService,
   ) { }
-
 
   create(createBalanceDto: CreateBalanceDto) {
     return this.prisma.balances.create({
@@ -28,10 +26,7 @@ export class BalancesService {
         }
       }
     });
-
   }
-
-
 
   findOne(wallet: string, symbol: string) {
     return this.prisma.balances.findFirst({
@@ -82,6 +77,4 @@ export class BalancesService {
       }
     })
   }
-
-  
 }
