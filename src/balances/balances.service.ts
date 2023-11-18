@@ -52,6 +52,18 @@ export class BalancesService {
     })
   }
 
+  // where: {
+  //   AND: [
+  //     {
+  //       walletAddress: wallet
+  //     },
+  //     {
+  //       currencySymbol: symbol
+  //     }
+  //   ]
+  // }
+
+
   updateBalance(id: string, updatedBalance: string) {
     return this.prisma.balances.update({
       where: {

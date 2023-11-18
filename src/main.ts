@@ -23,6 +23,7 @@ async function bootstrap() {
         // same for all levels
         new transports.DailyRotateFile({
           filename: `logs/%DATE%-combined.log`,
+          level: 'debug',
           format: format.combine(format.timestamp(), format.json()),
           datePattern: 'YYYY-MM-DD',
           zippedArchive: false,

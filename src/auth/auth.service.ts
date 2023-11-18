@@ -27,6 +27,7 @@ export class AuthService {
   async signInMerchant(username: string, pass: string): Promise<any> {
     const user = await this.merchantService.findOne(username, true);
 
+    // todo: Shahzeb, user is null if not found, so we need to handle this case, otherwise user.password will throw error
     const isPasswordValid = await this.passwordService.validatePassword(pass, user.password,)
 
     if (!isPasswordValid) {
