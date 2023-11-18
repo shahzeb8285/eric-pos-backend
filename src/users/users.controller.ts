@@ -1,13 +1,13 @@
 import { Controller, Get, Post, Request, Body, Param, UseGuards, UnauthorizedException, Logger } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from 'src/auth/auth.guard';
 
+@UseGuards(AuthGuard)
+@ApiBearerAuth()
 @Controller('users')
 @ApiTags("users")
-
-@UseGuards(AuthGuard)
 export class UsersController {
   private logger = new Logger(UsersController.name);
   constructor(private readonly usersService: UsersService,) { }
