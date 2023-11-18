@@ -48,7 +48,7 @@ export class SettlementService {
     const merchantConfigs = wallet.user.merchant.configs
     const balances = await this.walletService.getBalancesByWallet(wallet.address);
     const bnb = balances.find((item) => {
-      return item.symbol === "BNB"  // todo: Shahzeb, we don't store BNB balances in the balances table
+      return item.symbol === "BNB"
     })
 
     const idrt = balances.find((item) => {

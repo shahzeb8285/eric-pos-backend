@@ -16,7 +16,7 @@ export class WalletController {
     await this.walletService.markSettlement(payload.walletAddress, true)
   }
 
-  // todo: Shahzeb, add auth guard and (if user is admin, return all wallets, if user is merchant, return only wallets that belong to merchant)
+  // todo: Shahzeb, add auth guard and (if user is merchant, return only wallets that belong to merchant)
   @Get()
   findAll() {
     this.logger.debug("findAll is called by xxxx")
@@ -29,14 +29,14 @@ export class WalletController {
     this.walletService.detachWallets()
   }
 
-  // todo: Shahzeb, add auth guard and (if user is admin, return all wallets, if user is merchant, return only wallets that belong to merchant)
+  // todo: Shahzeb, add auth guard and (if user is merchant, return only wallets that belong to merchant)
   @Get(":address")
   findOne(@Param('address') address: string) {
     this.logger.debug("findOne for address ${address} is called by xxxx")
     return this.walletService.findOne(address);
   }
 
-  // todo: Shahzeb, add auth guard and (if user is admin, return all wallets, if user is merchant, return only wallets that belong to merchant)
+  // todo: Shahzeb, add auth guard and (if user is merchant, return only wallets that belong to merchant)
   @Get("/balance/:address")
   getbalance(@Param('address') address: string) {
     this.logger.debug("getbalance for address ${address} is called by xxxx")

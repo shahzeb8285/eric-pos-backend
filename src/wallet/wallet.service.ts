@@ -150,6 +150,7 @@ export class WalletService {
       where: {
         user: null
       }
+      //sortby balance, in order to get the non assigned wallet with highest balance
     })
 
     if (!nonAssignedWallet) {
