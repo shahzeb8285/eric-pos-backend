@@ -11,7 +11,6 @@ export class WalletController {
   private logger = new Logger(WalletController.name);
   constructor(private readonly walletService: WalletService,) { }
 
-  //todo: Shahzeb, please check if this is correct, I've combined the two functions into one, and added await
   @OnEvent('wallet.balanceExceeds')
   async handleNewWalletAddEvent(payload: WalletBalanceExceedsEvent) {
     await this.walletService.markSettlement(payload.walletAddress, true)
