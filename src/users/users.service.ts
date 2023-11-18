@@ -17,13 +17,11 @@ export class UsersService {
       include: {
         wallet: true,
         incomingTransactions: true,
-        outgoingTransactions:true
-
+        outgoingTransactions: true
       }
     })
 
     if (!user) {
-
       user = await this.prisma.user.create({
         data: {
           username: createUserDto.username,
@@ -33,27 +31,20 @@ export class UsersService {
         }, include: {
           wallet: true,
           incomingTransactions: true,
-        outgoingTransactions:true
+          outgoingTransactions: true
         }
       })
-
     }
 
     if (!user.walletId) {
       await this.walletService.assignWallet({ userId: user.id })
     }
-
-
-
+    
     return this.findOne(createUserDto.username)
-
-
   }
 
-
-
   async findOne(username: string) {
-    const resp =  await this.prisma.user.findFirst({
+    const resp = await this.prisma.user.findFirst({
       where: {
         username,
       },
@@ -61,15 +52,15 @@ export class UsersService {
         wallet: true,
         merchant: true,
         incomingTransactions: true,
-        outgoingTransactions:true
+        outgoingTransactions: true
       }
     })
 
     delete resp.merchant.password
     return resp
   }
-  async getAddressInfo(username: string) {
 
+  async getAddressInfo(username: string) {
     const user = await this.prisma.user.findFirst({
       where: {
         username,
@@ -77,14 +68,10 @@ export class UsersService {
       include: {
         wallet: true,
         incomingTransactions: true,
-        outgoingTransactions:true
+        outgoingTransactions: true
       }
-
     })
 
     return user
   }
-
-
-
 }

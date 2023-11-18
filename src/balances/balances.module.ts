@@ -6,4 +6,4 @@ import { BalancesController } from './balances.controller';
   controllers: [BalancesController],
   providers: [BalancesService],
 })
-export class BalancesModule {}
+export class BalancesModule { }

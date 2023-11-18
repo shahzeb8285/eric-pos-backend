@@ -18,7 +18,6 @@ export class TransactionsController {
     return this.transactionsService.findOneIncoming(txnHash);
   }
 
-
   @Get("/outgoing")
   findAllOutgoing() {
     return this.transactionsService.findAllOutgoing();
@@ -29,16 +28,8 @@ export class TransactionsController {
     return this.transactionsService.findOneOutgoing(txnHash);
   }
 
-
- 
-
   @Get("/allTransactions")
   findAllTransaction() {
     return this.transactionsService.findAll();
   }
-
-
- 
- 
-
 }

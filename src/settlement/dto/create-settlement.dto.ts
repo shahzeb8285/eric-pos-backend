@@ -1,5 +1,3 @@
-
-
 export class CreateSettlementDto {
     settlementTxnHash: string
     settlementAddress: string
@@ -10,6 +8,5 @@ export class CreateSettlementDto {
     commissionAddress: string
     totalGasFeePaid: string
     fromWalletAddress: string
-    
 }
 

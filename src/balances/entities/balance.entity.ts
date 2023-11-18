@@ -1,1 +1,1 @@
-export class Balance {}
+export class Balance { }

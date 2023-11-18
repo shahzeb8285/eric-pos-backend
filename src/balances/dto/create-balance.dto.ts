@@ -1,5 +1,5 @@
 export class CreateBalanceDto {
-    walletAddress : string 
-    currencySymbol :string
-    balance  :    string
+    walletAddress: string
+    currencySymbol: string
+    balance: string
 }

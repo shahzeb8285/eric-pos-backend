@@ -1,6 +1,5 @@
 
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { UsersService } from '../users/users.service';
 import { MerchantService } from 'src/merchant/merchant.service';
 import { JwtService } from '@nestjs/jwt';
 import { PasswordService } from 'src/password.service';
@@ -9,12 +8,12 @@ import { AdminService } from 'src/admin/admin.service';
 @Injectable()
 export class AuthService {
   constructor(private merchantService: MerchantService,
-    private adminService : AdminService,
+    private adminService: AdminService,
     private jwtService: JwtService,
     private passwordService: PasswordService
   ) { }
 
-  async generateJWT (userId: string, name: string, isAdmin: boolean) {
+  async generateJWT(userId: string, name: string, isAdmin: boolean) {
     const payload = {
       id: userId,
       name,
@@ -23,7 +22,6 @@ export class AuthService {
     return {
       access_token: await this.jwtService.signAsync(payload),
     };
-
   }
 
   async signInMerchant(username: string, pass: string): Promise<any> {
@@ -34,7 +32,7 @@ export class AuthService {
     if (!isPasswordValid) {
       throw new UnauthorizedException();
     }
-    return this.generateJWT(user.id,user.name,false)
+    return this.generateJWT(user.id, user.name, false)
   }
 
   async signInAdmin(username: string, pass: string): Promise<any> {
@@ -44,9 +42,9 @@ export class AuthService {
     if (!isPasswordValid) {
       throw new UnauthorizedException();
     }
-    return this.generateJWT(user.id,user.username,true)
+    return this.generateJWT(user.id, user.username, true)
   }
 
 
-  
+
 }

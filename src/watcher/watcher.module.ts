@@ -6,6 +6,6 @@ import { TransactionsService } from 'src/transactions/transactions.service';
 
 @Module({
   controllers: [WatcherController],
-  providers: [WatcherService,WalletService,TransactionsService],
+  providers: [WatcherService, WalletService, TransactionsService],
 })
-export class WatcherModule {}
+export class WatcherModule { }

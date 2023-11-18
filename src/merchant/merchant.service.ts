@@ -1,4 +1,4 @@
-import { Injectable, BadGatewayException} from '@nestjs/common';
+import { Injectable, BadGatewayException } from '@nestjs/common';
 import { CreateMerchantDto } from './dto/create-merchant.dto';
 import { UpdateMerchantDto } from './dto/update-merchant.dto';
 import { PrismaService } from 'nestjs-prisma';
@@ -8,20 +8,15 @@ import requiredMerchantConfig from './required.merchant.config';
 
 @Injectable()
 export class MerchantService {
-  constructor(private prisma: PrismaService,
-    private passwordService: PasswordService) { }
-
-  
-  
+  constructor(private prisma: PrismaService, private passwordService: PasswordService) { }
 
   getMissingConfigItems(configs) {
     const allConfig = [...requiredMerchantConfig]
     const providedConfigKeys = configs.map((item) => {
       return item.key
     })
-    
 
-    const missingItems =  allConfig.filter(val => !providedConfigKeys.includes(val));
+    const missingItems = allConfig.filter(val => !providedConfigKeys.includes(val));
     return missingItems
   }
 
@@ -34,26 +29,22 @@ export class MerchantService {
     }
     const missingConfigItems = this.getMissingConfigItems(createMerchantDto.configs);
 
-    if (missingConfigItems.length >0) {
-        throw new BadGatewayException(`Merchant config does not have all required keys ${missingConfigItems.toString()}`);
+    if (missingConfigItems.length > 0) {
+      throw new BadGatewayException(`Merchant config does not have all required keys ${missingConfigItems.toString()}`);
     }
 
-    
     const resp = await this.prisma.merchant.create({
       data: {
         ...createMerchantDto,
         password: hashedPassword,
         configs: {
           createMany: {
-            
             data: createMerchantDto.configs
           }
-
         }
       },
       include: {
-        configs: true,        users:true
-
+        configs: true, users: true
       }
     })
     delete resp.password;
@@ -65,7 +56,7 @@ export class MerchantService {
     const items = await this.prisma.merchant.findMany({
       include: {
         configs: true,
-        users:true
+        users: true
       }
     })
     return items.map((item) => {
@@ -74,21 +65,15 @@ export class MerchantService {
     })
   }
 
-
-  
- 
-  async findOne(name: string,withPassword:boolean) {
+  async findOne(name: string, withPassword: boolean) {
     const resp = await this.prisma.merchant.findFirst({
       where: {
         name,
       },
       include: {
         configs: true,
-        users:true
-
+        users: true
       },
-      
-
     })
     if (!withPassword) {
       delete resp.password
@@ -97,7 +82,6 @@ export class MerchantService {
   }
 
   async update(name: string, updateMerchantDto: UpdateMerchantDto) {
-
     for (const config of updateMerchantDto.configs) {
       if (!config.id) {
         await this.prisma.config.create({
@@ -117,12 +101,10 @@ export class MerchantService {
           },
           data: {
             ...config,
-
           }
         })
       }
     }
-
 
     const resp = await this.prisma.merchant.update({
       where: {
@@ -139,8 +121,6 @@ export class MerchantService {
     delete resp.password
 
     return resp
-
-
   }
 
   async remove(name: string) {

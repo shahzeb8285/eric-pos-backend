@@ -5,6 +5,6 @@ import { PasswordService } from 'src/password.service';
 
 @Module({
   controllers: [AdminController],
-  providers: [AdminService,PasswordService],
+  providers: [AdminService, PasswordService],
 })
-export class AdminModule {}
+export class AdminModule { }
