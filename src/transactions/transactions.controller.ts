@@ -31,4 +31,9 @@ export class TransactionsController {
   findAllTransaction() {
     return this.transactionsService.findAll();
   }
+
+  @Get("/dashboardStats")
+  getDashboardStats() {
+    return this.transactionsService.getDashboardStats();
+  }
 }

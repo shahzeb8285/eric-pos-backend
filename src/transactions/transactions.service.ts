@@ -103,4 +103,71 @@ export class TransactionsService {
       outgoingTxns
     }
   }
+
+  async getDashboardStats() {
+    const incomingTxns = await this.prisma.incomingTransactions.findMany()
+    const outgoingTxns = await this.prisma.outgoingTransactions.findMany()
+    
+    const summarizedData = [];
+
+    const allTransactions = [...incomingTxns, ...outgoingTxns];
+    
+    // Group transactions by date
+    const transactionsByDate = allTransactions.reduce((acc, transaction) => {
+      const date = transaction.createdAt.toISOString().split('T')[0];
+
+      if (!acc[date]) {
+        acc[date] = {
+          date,
+          noOfInTxn: 0,
+          noOfOutTxn: 0,
+          inAmount: BigInt(0),
+          outAmount: BigInt(0),
+          inCommission: BigInt(0),
+          outCommission: BigInt(0),
+          inGasFee: BigInt(0),
+          outGasFee: BigInt(0)
+        };
+      }
+
+      if ('fromAddress' in transaction) {
+        // Incoming transaction
+        acc[date].noOfInTxn += 1;
+        acc[date].inAmount += BigInt(transaction.amount);
+        acc[date].inCommission += this.calculateCommission(transaction.amount);
+        // acc[date].inGasFee (no gas fee for incoming txn)
+      } else {
+        // Outgoing transaction
+        acc[date].noOfOutTxn += 1;
+        acc[date].outAmount += BigInt(transaction.amount);
+        // acc[date].outCommission (no commission for outgoing txn)
+        acc[date].outGasFee += BigInt(transaction.gasFee);
+      }
+
+      return acc;
+    }, {});
+
+    // Convert all BigInt to strings becuz BigInt cannot be serialized
+    Object.keys(transactionsByDate).forEach(date => {
+      transactionsByDate[date].inAmount = transactionsByDate[date].inAmount.toString();
+      transactionsByDate[date].inCommission = transactionsByDate[date].inCommission.toString();
+      transactionsByDate[date].outAmount = transactionsByDate[date].outAmount.toString();
+      transactionsByDate[date].outCommission = transactionsByDate[date].outCommission.toString();
+      transactionsByDate[date].inGasFee = transactionsByDate[date].inGasFee.toString();
+      transactionsByDate[date].outGasFee = transactionsByDate[date].outGasFee.toString();
+    });
+
+    Object.values(transactionsByDate).forEach((summary) => {
+      summarizedData.push(summary);
+    });
+
+    return summarizedData;
+  }
+
+  calculateCommission = (amount: string): bigint => {
+    const commissionRate = 0.015;
+    const amountBigInt = BigInt(amount);
+    const commission = amountBigInt * BigInt(Math.floor(commissionRate * 10000)) / BigInt(10000);
+    return commission;
+  };
 }
