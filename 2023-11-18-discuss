@@ -1,39 +1,14 @@
-Question:
-- Do we need to change the IERC20 abi if we switch between USDT/ IDRT/ TOKEN or other tokens?
-	- if BEP20 or ERC20, ether.js can be used, but TRC20, cannot be used, need to make additional code
 
-Bugs:
-- Outgoing transaction doesn't reduce balance. 
-	**please check balance.service#findOne
-- SettlementService#handleSettlement "USDT", should use ACCEPTED_TOKENS[0].symbol instead of hardcoding.
-- WalletController is not authenticated, add auth guard 
-- Wrong username throw NPE
-	"context":"ExceptionsHandler","level":"error","message":"Cannot read properties of null (reading 'password')","stack":["TypeError: Cannot read properties of null (reading 'password')\n    at AuthService.signInMerchant (/home/ubuntu/projects/eric-pos-backend/src/auth/auth.service.ts:30:84)\n    at /home/ubuntu/projects/eric-pos-backend/node_modules/@nestjs/core/router/router-execution-context.js:46:28\n    at /home/ubuntu/projects/eric-pos-backend/node_modules/@nestjs/core/router/router-proxy.js:9:17"],"timestamp":"2023-11-18T07:59:39.021Z"}
-	user is null
-
-Add API Endpoints:
-- transactions/orphanTransactions: get all orphan transactions
-- wallet/assignHistory/?userid={userId}: select * from wallet_assignment_history where userId = :userId
-- wallet/assignHistory/{walletAddress}: select * from wallet_assignment_history where walletAddress = :walletAddress
-- transactions/{userId}: get incoming and outgoing transaction related to this userId
-- transactions/{walletAddress}: get incoming and outgoing transaction related to this walletAddress
-- transactions/mapOrphan: POST {txnHash, userId}
-	backfill userId to incomingTransaction, setIsOrphan = false
-	trigger merchant callback
-	save to orphan_history (txnHash, userId, mapTime)
-- transactions/orphanHistory: select * from orphan_history
 
 Task:
-- outgoingTransactions gas fee are not populated. SettlementService#transferIDRT should backfill the outgoingTransaction
-- incoming transaction trigger merchant callback
+
 - when we assign wallet, choose the unassigned wallet with most (IDRT) balance first (WalletService#assignWallet, nonAssignedWallet findFirst + sortBy)
-- Add wallet assignment history table (walletAddress, userId, assignTime, unassignTime), create record when assign & unassign wallet
-- SettlementService#handleSettlement for the BigInt(1000), make it a config called "bnbBuffer", instead of hardcoding (system_config)
+ need to discuss this point i think we should not create balances table only deal with field for idrt balance
+
+
+
+
 - after transferBnb, check the bnbVault bnb amount, if < minBnb, send warning email
 
 
 
-Merchant callback:
-	POST to callback url with {"txnHash":0x12345, txnTime, userid, amount}
-	if response is not 200. keep trying every 5 mins, until we get 200.
-	add a field in IncomingTransaction with Status (UNACK, ACK), if it is UNACK, keep sending every 5 mins, if we got 200, mark it as ACK.

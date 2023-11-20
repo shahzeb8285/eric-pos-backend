@@ -5,12 +5,15 @@ import { WalletService } from 'src/wallet/wallet.service';
 import { HDNodeWallet, ethers } from 'ethers';
 import { SETTINGS, getRPC } from 'src/settings';
 import IERC20 from 'src/abis/IERC20';
+import sendMail from 'src/utils/notifier';
 
 @Injectable()
 export class SettlementService {
   private logger = new Logger(SettlementService.name);
 
-  constructor(private prisma: PrismaService, private walletService: WalletService) {
+  constructor(private prisma: PrismaService,
+    // private configService: ConfigService,
+    private walletService: WalletService) {
   }
 
   async settleWallets() {
@@ -52,7 +55,7 @@ export class SettlementService {
     })
 
     const idrt = balances.find((item) => {
-      return item.symbol === "USDT" // todo: Shahzeb if not idrt balances? better use Settings name
+      return item.symbol === SETTINGS.ACCEPTED_TOKENS[0].symbol
     })
 
     const comissionConfig = merchantConfigs.find((item) => {
@@ -80,7 +83,7 @@ export class SettlementService {
     const currentGasPrice = currentFeeData.gasPrice
     const totalSettlementGasFee = currentGasPrice * settlementGasEstimate;
     const totalComissionGasFee = currentGasPrice * comissionGasEstimate;
-    const totalGasRequired = totalComissionGasFee + totalSettlementGasFee + BigInt(1000)  // todo: Shahzeb make this buffer configurable, or shall we transfer more if the settlement is more frequent
+    const totalGasRequired = totalComissionGasFee + totalSettlementGasFee + BigInt(SETTINGS.BNB_BUFFER)  // todo: Shahzeb make this buffer configurable, or shall we transfer more if the settlement is more frequent
 
     this.logger.debug(`comissionAmount: ${comissionAmount}, settlementAmount: ${settlementAmount}, totalGasRequired: ${totalGasRequired}`)
 
@@ -89,6 +92,10 @@ export class SettlementService {
     } else {
       await this.transferIDRT(etherjsSignerForCurrentWallet.address, idrtContract, comissionAmount, settlementAmount, merchantWalletConfig.value, commissionWalletConfig.value);
     }
+
+    const finalBNBBalance = await etherjsProvider.getBalance(etherjsSignerForCurrentWallet.address);
+  
+    await this.walletService.updateBNBBalance(etherjsSignerForCurrentWallet.address,finalBNBBalance.toString());
   }
 
   async transferIDRT(fromWalletAddress: string, idrtContract, commissionAmount: bigint, settlementAmount: bigint, settlementAddress: string, commissionAddress: string) {
@@ -105,7 +112,6 @@ export class SettlementService {
     const commissionGasFee = commissionTxnResp.gasUsed * commissionTxnResp.gasPrice
 
     const totalGasFeePaid = (settlementGasFee + commissionGasFee).toString()
-    // todo: Shahzeb please backfill settlementGasFee and commissionGasFee in the outgoing transaction table
 
     await this.settleWallet({
       settlementTxnHash,
@@ -124,6 +130,12 @@ export class SettlementService {
     this.logger.log({ level: "info", message: `Transfering in BNB to ${to}, amount: ${amount}`, });
     const etherjsProvider = this.getJSONProvider();
     const bnbFundsWallet = new ethers.Wallet(process.env.BNB_FUND_WALLET_PK, etherjsProvider)
+    const bnbFundWalletBalance = await etherjsProvider.getBalance(bnbFundsWallet.address);
+   
+    if (bnbFundWalletBalance < SETTINGS.MIN_BNB_BALANCE) {
+      await sendMail(SETTINGS.BNBLOW_ALERT_MAIL,"BNB RUNNING LOW",`BNB balande is : ${bnbFundWalletBalance} BNB`)
+    }
+    
     const txnData = {
       to,
       value: amount.toString()
@@ -154,7 +166,7 @@ export class SettlementService {
   }
 
   findOne(settlementTxnHash: string) {
-    return this.prisma.settlements.findFirst({
+    return this.prisma.settlements.findUnique({
       where: {
         settlementTxnHash
       }

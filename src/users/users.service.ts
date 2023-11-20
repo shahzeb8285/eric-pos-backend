@@ -10,7 +10,7 @@ export class UsersService {
   ) { }
 
   async create(createUserDto: CreateUserDto, merchantId: string) {
-    let user = await this.prisma.user.findFirst({
+    let user = await this.prisma.user.findUnique({
       where: {
         username: createUserDto.username
       },
@@ -44,7 +44,7 @@ export class UsersService {
   }
 
   async findOne(username: string) {
-    const resp = await this.prisma.user.findFirst({
+    const resp = await this.prisma.user.findUnique({
       where: {
         username,
       },
@@ -61,7 +61,7 @@ export class UsersService {
   }
 
   async getAddressInfo(username: string) {
-    const user = await this.prisma.user.findFirst({
+    const user = await this.prisma.user.findUnique({
       where: {
         username,
       },

@@ -65,8 +65,21 @@ export class MerchantService {
     })
   }
 
+  async getMerchantCallBackUrl(merchantId: string) {
+   
+    const config = await this.prisma.config.findFirst({
+      where: {
+        merchantId,
+        key:"merchantCallBackUrl",
+      }
+    })
+    if (config) {
+      return config.value
+    }
+  }
+
   async findOne(name: string, withPassword: boolean) {
-    const resp = await this.prisma.merchant.findFirst({
+    const resp = await this.prisma.merchant.findUnique({
       where: {
         name,
       },

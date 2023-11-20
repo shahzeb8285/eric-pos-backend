@@ -59,14 +59,17 @@ model Wallet {
   updatedAt            DateTime               @updatedAt
   address              String                 @id @unique
   user                 User?
+  
   incomingTransactions IncomingTransactions[]
   outgoingTransactions OutgoingTransactions[]
 
-  lastAssignedAt       DateTime
+  lastAssignedAt       DateTime?
   pathId               Int
-  balances             Balances?
+  // balances             Balances?
   isReadyForSettlement Boolean       @default(false)
   settlements          Settlements[]
+  idrtBalance String?
+  bnbBalance String?
 }
 
 model Settlements {
@@ -84,15 +87,15 @@ model Settlements {
   fromWalletAddress String
 }
 
-model Balances {
-  id             String   @id @default(cuid())
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  walletAddress  String   @unique
-  currencySymbol String
-  balance        String
-  wallet         Wallet?  @relation(fields: [walletAddress], references: [address])
-}
+// model Balances {
+//   id             String   @id @default(cuid())
+//   createdAt      DateTime @default(now())
+//   updatedAt      DateTime @updatedAt
+//   walletAddress  String   @unique
+//   currencySymbol String
+//   balance        String
+//   wallet         Wallet?  @relation(fields: [walletAddress], references: [address])
+// }
 
 model OutgoingTransactions {
   createdAt      DateTime @default(now())
@@ -109,16 +112,44 @@ model OutgoingTransactions {
 }
 
 model IncomingTransactions {
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  txnHash        String   @id @unique
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+  txnHash        String                    @id @unique
   fromAddress    String
   userId         String?
-  user           User?    @relation(fields: [userId], references: [id])
+  user           User?                     @relation(fields: [userId], references: [id])
   amount         String
   gasFee         String?
   currencySymbol String
   walletId       String?
-  wallet         Wallet?  @relation(fields: [walletId], references: [address])
-  isOrphanTxn    Boolean @default(false)
+  wallet         Wallet?                   @relation(fields: [walletId], references: [address])
+  isOrphanTxn    Boolean                   @default(false)
+  callbackStatus TransactionCallBackStatus @default(UNACK)
+}
+
+model WalletAssignment {
+  id         String    @id @default(cuid())
+  attachedAt DateTime  @default(now())
+  detachedAt DateTime?
+  userId     String
+  walletId   String
+}
+
+model OrphanHistory {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  txnHash   String   @unique
+  userId    String
+}
+
+model GlobalSettings {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  settings  String // settings in json
+}
+
+enum TransactionCallBackStatus {
+  ACK
+  UNACK
 }

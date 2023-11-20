@@ -26,8 +26,12 @@ export class AuthService {
 
   async signInMerchant(username: string, pass: string): Promise<any> {
     const user = await this.merchantService.findOne(username, true);
-
-    // todo: Shahzeb, user is null if not found, so we need to handle this case, otherwise user.password will throw error
+     // todo: Shahzeb, user is null if not found, so we need to handle this case, otherwise user.password will throw error
+     // reply : done 
+    if (!user) {
+      throw new UnauthorizedException("Account not found")
+    }
+   
     const isPasswordValid = await this.passwordService.validatePassword(pass, user.password,)
 
     if (!isPasswordValid) {
@@ -38,7 +42,9 @@ export class AuthService {
 
   async signInAdmin(username: string, pass: string): Promise<any> {
     const user = await this.adminService.findOne(username, true);
-
+    if (!user) {
+      throw new UnauthorizedException("Account not found")
+    }
     const isPasswordValid = await this.passwordService.validatePassword(pass, user.password,)
     if (!isPasswordValid) {
       throw new UnauthorizedException();

@@ -50,11 +50,12 @@ Table Wallet {
   user User
   incomingTransactions IncomingTransactions [not null]
   outgoingTransactions OutgoingTransactions [not null]
-  lastAssignedAt DateTime [not null]
+  lastAssignedAt DateTime
   pathId Int [not null]
-  balances Balances
   isReadyForSettlement Boolean [not null, default: false]
   settlements Settlements [not null]
+  idrtBalance String
+  bnbBalance String
 }
 
 Table Settlements {
@@ -70,16 +71,6 @@ Table Settlements {
   totalGasFeePaid String [not null]
   fromWallet Wallet [not null]
   fromWalletAddress String [not null]
-}
-
-Table Balances {
-  id String [pk]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  walletAddress String [unique, not null]
-  currencySymbol String [not null]
-  balance String [not null]
-  wallet Wallet
 }
 
 Table OutgoingTransactions {
@@ -109,6 +100,34 @@ Table IncomingTransactions {
   walletId String
   wallet Wallet
   isOrphanTxn Boolean [not null, default: false]
+  callbackStatus TransactionCallBackStatus [not null, default: 'UNACK']
+}
+
+Table WalletAssignment {
+  id String [pk]
+  attachedAt DateTime [default: `now()`, not null]
+  detachedAt DateTime
+  userId String [not null]
+  walletId String [not null]
+}
+
+Table OrphanHistory {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  txnHash String [unique, not null]
+  userId String [not null]
+}
+
+Table GlobalSettings {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  settings String [not null]
+}
+
+Enum TransactionCallBackStatus {
+  ACK
+  UNACK
 }
 
 Ref: Config.merchantId > Merchant.id
@@ -118,8 +137,6 @@ Ref: User.walletId - Wallet.address
 Ref: User.merchantId > Merchant.id
 
 Ref: Settlements.fromWalletAddress > Wallet.address
-
-Ref: Balances.walletAddress - Wallet.address
 
 Ref: OutgoingTransactions.userId > User.id
 

@@ -32,7 +32,7 @@ export class AdminService {
   }
 
   async findOne(username: string, withPassword: boolean) {
-    const resp = await this.prisma.admin.findFirst({
+    const resp = await this.prisma.admin.findUnique({
       where: {
         username,
       },

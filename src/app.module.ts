@@ -12,17 +12,28 @@ import { AdminModule } from './admin/admin.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { TransactionsModule } from './transactions/transactions.module';
 import { SettlementModule } from './settlement/settlement.module';
-import { BalancesModule } from './balances/balances.module';
 import { SettlementService } from './settlement/settlement.service';
 import { WalletService } from './wallet/wallet.service';
+import { GasModule } from './gas/gas.module';
+import { OrphanHistoryModule } from './orphan-history/orphan-history.module';
+import { GlobalSettingsModule } from './global_settings/global_settings.module';
 
 @Module({
   imports: [
+   
     ScheduleModule.forRoot(),
     EventEmitterModule.forRoot(),
     PrismaModule.forRoot({
       isGlobal: true,
       prismaServiceOptions: {
+        prismaOptions: {
+          log: [
+            {
+              emit: 'event',
+              level: 'query',
+            },
+          ],
+        },
         middlewares: [
           // configure your prisma middleware
           loggingMiddleware({
@@ -40,7 +51,9 @@ import { WalletService } from './wallet/wallet.service';
   AdminModule,
   TransactionsModule,
   SettlementModule,
-  BalancesModule,
+  GasModule,
+  OrphanHistoryModule,
+  GlobalSettingsModule,
   ],
   controllers: [AppController],
   providers: [AppService,SettlementService,WalletService],

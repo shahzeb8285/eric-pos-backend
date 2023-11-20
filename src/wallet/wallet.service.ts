@@ -12,7 +12,7 @@ import {
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { WalletCreatedEvent } from 'src/events/wallet.event';
 import IERC20 from 'src/abis/IERC20';
-import moment from 'moment';
+import * as moment from 'moment';
 
 @Injectable()
 export class WalletService {
@@ -36,7 +36,38 @@ export class WalletService {
     })
   }
 
+  async updateBNBBalance(walletAddress: string, bnbBalance: string) {
+    await this.prisma.wallet.update({
+      data: {
+        bnbBalance,
+      },
+      where: {
+        address:walletAddress
+      }
+    })
+  }
+
+  async getWalletAssignmentByWallet(walletId: string) {
+    const resp = await this.prisma.walletAssignment.findMany({
+      where: {
+        walletId,
+      }
+    })
+    return resp
+  }
+
+
+  async getWalletAssignmentByUser(userId: string) {
+    const resp = await this.prisma.walletAssignment.findMany({
+      where: {
+        userId,
+      }
+    })
+    return resp
+  }
+
   async detachWallets() {
+    
     const targetDate = moment().subtract(SETTINGS.WALLET_DETACH_TIME);
 
     const allAssignedWallet = await this.prisma.wallet.findMany({
@@ -45,10 +76,33 @@ export class WalletService {
           lte: targetDate.toDate()
         },
         isReadyForSettlement: false
+      },
+      include: {
+        user: {
+          select: {
+            id:true
+          }
+        }
       }
     })
 
     allAssignedWallet.map(async (item) => {
+      const assignmentHistory = await this.prisma.walletAssignment.findFirst({
+        where: {
+          walletId: item.address,
+          userId: item.user.id,
+          detachedAt:undefined
+        }
+      });
+
+      await this.prisma.walletAssignment.update({
+        where: {
+         id:assignmentHistory.id
+        },
+        data: {
+          detachedAt:new Date(),
+        }
+      })
       await this.prisma.wallet.update({
         where: {
           address: item.address,
@@ -62,7 +116,7 @@ export class WalletService {
   }
 
   async getUserIdByWallet(address: string) {
-    const resp = await this.prisma.wallet.findFirst({
+    const resp = await this.prisma.wallet.findUnique({
       where: {
         address
       },
@@ -145,15 +199,24 @@ export class WalletService {
     return { address, pathId }
   }
 
-  async assignWallet(createWalletDto: CreateWalletDto) {
-    let nonAssignedWallet = await this.prisma.wallet.findFirst({
+  async getNonAssignedWallet() {
+    const wallet = await this.prisma.wallet.findFirst({
+      orderBy: {
+        idrtBalance:"asc",
+      },
       where: {
         user: null
       }
-      //sortby balance, in order to get the non assigned wallet with highest balance
     })
+  
 
-    if (!nonAssignedWallet) {
+    return wallet
+  }
+  async assignWallet(createWalletDto: CreateWalletDto) {
+    let nonAssignedWallet = await this.getNonAssignedWallet();
+
+
+    if (nonAssignedWallet != null) {
       const { address, pathId } = await this.generateWallet()
       nonAssignedWallet = await this.prisma.wallet.create({
         data: {
@@ -176,14 +239,31 @@ export class WalletService {
         }
       }
     })
+
+    await this.prisma.walletAssignment.create({
+      data: {
+        userId: createWalletDto.userId,
+        walletId: finalWallet.address,
+        
+    }})
     return { address: finalWallet.address };
   }
 
   findAll() {
     return this.prisma.wallet.findMany({
-      include: {
-        balances: true
-      }
+     
+    })
+  }
+
+
+  findAllByMerchant(merchantId:string) {
+    return this.prisma.wallet.findMany({
+      where: {
+        user: {
+          merchantId,
+        }
+      },
+     
     })
   }
 
@@ -207,12 +287,12 @@ export class WalletService {
   }
 
   findOne(address: string) {
-    return this.prisma.wallet.findFirst({
+    return this.prisma.wallet.findUnique({
       where: {
         address: address,
       },
       include: {
-        balances: true
+        user:true
       }
     })
   }
