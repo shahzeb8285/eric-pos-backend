@@ -75,13 +75,18 @@ export class TransactionsController {
     }
   }
 
+  @Get("/dashboardStats")
+  getDashboardStats() {
+    return this.transactionsService.getDashboardStats();
+  }
+
   async sendCallback(txn) {
     const merchantCallBackUrl = await this.merchantService.getMerchantCallBackUrl(txn.user.merchantId);
     if (merchantCallBackUrl) {
       const payload = {
         txnHash: txn.txnHash,
         txnTime: txn.createdAt,
-        username:txn.user.username,
+        username: txn.user.username,
         amount: txn.amount,
       }
       try {
@@ -102,4 +107,5 @@ export class TransactionsController {
 
     }
   }
+
 }

@@ -34,7 +34,7 @@ export class MerchantController {
   @Get(':name')
   findOne(@Request() req,@Param('name') name: string) {
     this.logger.debug({ level: "debug", message: `Admin ${req.user.name} is getting merchant ${name}` });
-    if (!req.user.isAdmin) {
+    if (!req.user.isAdmin && req.user.name !== name) {
       throw new UnauthorizedException();
     }
     return this.merchantService.findOne(name,false);
@@ -43,7 +43,7 @@ export class MerchantController {
   @Patch(':name')
   update(@Request() req,@Param('name') name: string, @Body() updateMerchantDto: UpdateMerchantDto) {
     this.logger.log({ level: "info", message: `Admin ${req.user.name} is updating merchant ${name}` });
-    if (!req.user.isAdmin) {
+    if (!req.user.isAdmin && req.user.name !== name) {
       throw new UnauthorizedException();
     }
     return this.merchantService.update(name, updateMerchantDto);
