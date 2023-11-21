@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Request, Param, Delete, UseGuards, UnauthorizedException, Logger } from '@nestjs/common';
+import { Controller, Get, Post, Body, Request, Param, UseGuards, UnauthorizedException, Logger } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { AuthGuard } from 'src/auth/auth.guard';
@@ -13,6 +13,7 @@ export class AdminController {
 
   @Post()
   create(@Request() req, @Body() createAdminDto: CreateAdminDto) {
+    // todo: any one can create an admin, need to fix this
     this.logger.log({ level: "info", message: `Creating new admin ${createAdminDto.username}` });
     return this.adminService.create(createAdminDto);
   }

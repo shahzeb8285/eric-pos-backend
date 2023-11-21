@@ -6,6 +6,7 @@ export class ConfigModal {
 
     @ApiProperty()
     key: string;
+    
     @ApiProperty()
     value: string;
 }

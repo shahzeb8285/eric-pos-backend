@@ -7,4 +7,5 @@ import { PasswordService } from 'src/password.service';
   controllers: [AdminController],
   providers: [AdminService, PasswordService],
 })
+
 export class AdminModule { }

@@ -6,4 +6,4 @@ import { OrphanHistoryController } from './orphan-history.controller';
   controllers: [OrphanHistoryController],
   providers: [OrphanHistoryService],
 })
-export class OrphanHistoryModule {}
+export class OrphanHistoryModule { }

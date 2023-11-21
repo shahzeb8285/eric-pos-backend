@@ -9,21 +9,18 @@ import { AbstractProvider, ethers } from 'ethers';
 export class GasController {
   private readonly ethersProvider: AbstractProvider;
   constructor(
-    private readonly gasService: GasService,
     private readonly transactionsService: TransactionsService) {
-      const rpc = getRPC()
-     this.ethersProvider = new ethers.JsonRpcProvider(rpc)
+    const rpc = getRPC()
+    this.ethersProvider = new ethers.JsonRpcProvider(rpc)
     this.findAndFillGasFee()
-   
-   }
-  
+  }
 
   @Cron('*/5 * * * *')
   async findAndFillGasFee() {
     const allTxnsWithoutGasFee = await this.transactionsService.findTxnsWithoutGasFee()
     for (const txn of allTxnsWithoutGasFee) {
       const gasFee = await this.fetchGasFee(txn.txnHash);
-      await this.transactionsService.updateGasFee(txn.txnHash,gasFee.toString())
+      await this.transactionsService.updateGasFee(txn.txnHash, gasFee.toString())
     }
   }
 

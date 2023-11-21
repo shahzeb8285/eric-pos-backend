@@ -9,4 +9,4 @@ import { WalletService } from 'src/wallet/wallet.service';
   providers: [GasService, TransactionsService, WalletService,
   ],
 })
-export class GasModule {}
+export class GasModule { }

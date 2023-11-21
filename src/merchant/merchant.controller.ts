@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Request,Body, Patch, Param, Delete, UseGuards, UnauthorizedException, Logger } from '@nestjs/common';
+import { Controller, Get, Post, Request, Body, Patch, Param, Delete, UseGuards, UnauthorizedException, Logger } from '@nestjs/common';
 import { MerchantService } from './merchant.service';
 import { CreateMerchantDto } from './dto/create-merchant.dto';
 import { UpdateMerchantDto } from './dto/update-merchant.dto';
@@ -11,7 +11,7 @@ import { AuthGuard } from 'src/auth/auth.guard';
 @ApiTags("merchant")
 export class MerchantController {
   private logger = new Logger(MerchantController.name);
-  constructor(private readonly merchantService: MerchantService) {}
+  constructor(private readonly merchantService: MerchantService) { }
 
   @Post()
   create(@Request() req, @Body() createMerchantDto: CreateMerchantDto) {
@@ -32,16 +32,16 @@ export class MerchantController {
   }
 
   @Get(':name')
-  findOne(@Request() req,@Param('name') name: string) {
+  findOne(@Request() req, @Param('name') name: string) {
     this.logger.debug({ level: "debug", message: `Admin ${req.user.name} is getting merchant ${name}` });
     if (!req.user.isAdmin && req.user.name !== name) {
       throw new UnauthorizedException();
     }
-    return this.merchantService.findOne(name,false);
+    return this.merchantService.findOne(name, false);
   }
 
   @Patch(':name')
-  update(@Request() req,@Param('name') name: string, @Body() updateMerchantDto: UpdateMerchantDto) {
+  update(@Request() req, @Param('name') name: string, @Body() updateMerchantDto: UpdateMerchantDto) {
     this.logger.log({ level: "info", message: `Admin ${req.user.name} is updating merchant ${name}` });
     if (!req.user.isAdmin && req.user.name !== name) {
       throw new UnauthorizedException();
@@ -50,7 +50,7 @@ export class MerchantController {
   }
 
   @Delete(':name')
-  remove(@Request() req,@Param('name') name: string) {
+  remove(@Request() req, @Param('name') name: string) {
     this.logger.warn({ level: "warn", message: `Admin ${req.user.name} is deleting merchant ${name}` });
     if (!req.user.isAdmin) {
       throw new UnauthorizedException();

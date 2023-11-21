@@ -1,1 +1,1 @@
-export class Merchant {}
+export class Merchant { }

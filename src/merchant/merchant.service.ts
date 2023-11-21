@@ -2,7 +2,6 @@ import { Injectable, BadGatewayException } from '@nestjs/common';
 import { CreateMerchantDto } from './dto/create-merchant.dto';
 import { UpdateMerchantDto } from './dto/update-merchant.dto';
 import { PrismaService } from 'nestjs-prisma';
-import { Prisma } from '@prisma/client';
 import { PasswordService } from 'src/password.service';
 import requiredMerchantConfig from './required.merchant.config';
 
@@ -66,7 +65,7 @@ export class MerchantService {
   }
 
   async getMerchantCallBackUrl(merchantId: string) {
-   
+    //todo: check sql of this query and make sure "AND" condition is correct
     const config = await this.prisma.config.findFirst({
       where: {
         merchantId,

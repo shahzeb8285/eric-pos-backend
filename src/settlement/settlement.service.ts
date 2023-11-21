@@ -71,7 +71,9 @@ export class SettlementService {
     })
 
     const comissionRate = Number(comissionConfig.value)
-    const comissionAmount = (BigInt(idrt.balance) * BigInt(comissionRate)) / BigInt(100);
+    // todo: commission rate change to 1/10000, there might be cases with commission = 1.75%
+    // todo: commission = max (% or min amount)
+    const comissionAmount = BigInt(idrt.balance) * BigInt(comissionRate) / BigInt(100);
     const settlementAmount = BigInt(idrt.balance) - comissionAmount;
 
     const { idrtContract, etherjsSignerForCurrentWallet, etherjsProvider } = this.getContractUsingSigner(wallet.pathId, idrt.address)
@@ -83,7 +85,7 @@ export class SettlementService {
     const currentGasPrice = currentFeeData.gasPrice
     const totalSettlementGasFee = currentGasPrice * settlementGasEstimate;
     const totalComissionGasFee = currentGasPrice * comissionGasEstimate;
-    const totalGasRequired = totalComissionGasFee + totalSettlementGasFee + BigInt(SETTINGS.BNB_BUFFER)  // todo: Shahzeb make this buffer configurable, or shall we transfer more if the settlement is more frequent
+    const totalGasRequired = totalComissionGasFee + totalSettlementGasFee + BigInt(SETTINGS.BNB_BUFFER)
 
     this.logger.debug(`comissionAmount: ${comissionAmount}, settlementAmount: ${settlementAmount}, totalGasRequired: ${totalGasRequired}`)
 
@@ -94,8 +96,8 @@ export class SettlementService {
     }
 
     const finalBNBBalance = await etherjsProvider.getBalance(etherjsSignerForCurrentWallet.address);
-  
-    await this.walletService.updateBNBBalance(etherjsSignerForCurrentWallet.address,finalBNBBalance.toString());
+
+    await this.walletService.updateBNBBalance(etherjsSignerForCurrentWallet.address, finalBNBBalance.toString());
   }
 
   async transferIDRT(fromWalletAddress: string, idrtContract, commissionAmount: bigint, settlementAmount: bigint, settlementAddress: string, commissionAddress: string) {
@@ -131,11 +133,11 @@ export class SettlementService {
     const etherjsProvider = this.getJSONProvider();
     const bnbFundsWallet = new ethers.Wallet(process.env.BNB_FUND_WALLET_PK, etherjsProvider)
     const bnbFundWalletBalance = await etherjsProvider.getBalance(bnbFundsWallet.address);
-   
+
     if (bnbFundWalletBalance < SETTINGS.MIN_BNB_BALANCE) {
-      await sendMail(SETTINGS.BNBLOW_ALERT_MAIL,"BNB RUNNING LOW",`BNB balande is : ${bnbFundWalletBalance} BNB`)
+      await sendMail(SETTINGS.BNBLOW_ALERT_MAIL, "BNB RUNNING LOW", `BNB balande is : ${bnbFundWalletBalance} BNB`)
     }
-    
+
     const txnData = {
       to,
       value: amount.toString()

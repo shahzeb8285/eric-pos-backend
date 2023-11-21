@@ -8,6 +8,7 @@ import 'winston-daily-rotate-file';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
+    // todo: are we using Winston? or just nest logger?
     logger: WinstonModule.createLogger({
       transports: [
         // file on daily rotation (error only)
