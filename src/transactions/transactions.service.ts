@@ -52,12 +52,37 @@ export class TransactionsService {
     return txn
   }
 
-  findAllIncoming() {
-    return this.prisma.incomingTransactions.findMany({
+  async findAllIncoming(page: number = 1, perPage: number = 10) {
+    const startIndex = (page - 1) * perPage;
+
+    const incomingTransactions = await this.prisma.incomingTransactions.findMany({
+      skip: startIndex,
+      take: perPage,
       include: {
-        user: true
+        user: true,
       },
-    })
+    });
+
+    const totalItems = await this.prisma.incomingTransactions.count(); // Get the total count of incoming transactions
+
+    const formattedTransactions = incomingTransactions.map(transaction => ({
+      createdAt: transaction.createdAt,
+      txnHash: transaction.txnHash,
+      fromAddress: transaction.fromAddress,
+      username: transaction.user.username,
+      amount: transaction.amount,
+      gasFee: transaction.gasFee,
+      currencySymbol: transaction.currencySymbol,
+      walletId: transaction.walletId,
+      isOrphanTxn: transaction.isOrphanTxn,
+    }));
+
+    return {
+      data: formattedTransactions,
+      page,
+      perPage,
+      totalItems,
+    };
   }
 
   updateGasFee(txnHash: string, gasFee: string) {
@@ -173,12 +198,36 @@ export class TransactionsService {
     return txn;
   }
 
-  findAllOutgoing() {
-    return this.prisma.outgoingTransactions.findMany({
+  async findAllOutgoing(page: number = 1, perPage: number = 10) {
+    const startIndex = (page - 1) * perPage;
+
+    const outgoingTransactions = await this.prisma.outgoingTransactions.findMany({
+      skip: startIndex,
+      take: perPage,
       include: {
-        user: true
+        user: true,
       },
-    })
+    });
+
+    const totalItems = await this.prisma.outgoingTransactions.count(); // Get the total count of outgoing transactions
+
+    const formattedTransactions = outgoingTransactions.map(transaction => ({
+      createdAt: transaction.createdAt,
+      txnHash: transaction.txnHash,
+      toAddress: transaction.toAddress,
+      username: transaction.user.username,
+      amount: transaction.amount,
+      gasFee: transaction.gasFee,
+      currencySymbol: transaction.currencySymbol,
+      walletId: transaction.walletId,
+    }));
+
+    return {
+      data: formattedTransactions,
+      page,
+      perPage,
+      totalItems,
+    };
   }
 
   findOneOutgoing(txnHash: string) {

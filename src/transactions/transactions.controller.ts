@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Logger } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseIntPipe, Logger } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
 import { ApiTags } from '@nestjs/swagger';
 import { Cron } from '@nestjs/schedule';
@@ -22,8 +22,11 @@ export class TransactionsController {
   }
 
   @Get("/incoming")
-  findAllIncoming() {
-    return this.transactionsService.findAllIncoming();
+  findAllIncoming(
+    @Query('page', ParseIntPipe) page: number = 1, // default to page 1
+    @Query('perPage', ParseIntPipe) perPage: number = 10, // default to 10 items per page
+  ) {
+    return this.transactionsService.findAllIncoming(page, perPage);
   }
 
   @Get('/incoming/:txnHash')
@@ -32,8 +35,11 @@ export class TransactionsController {
   }
 
   @Get("/outgoing")
-  findAllOutgoing() {
-    return this.transactionsService.findAllOutgoing();
+  findAllOutgoing(
+    @Query('page', ParseIntPipe) page: number = 1, // default to page 1
+    @Query('perPage', ParseIntPipe) perPage: number = 10, // default to 10 items per page
+  ) {
+    return this.transactionsService.findAllOutgoing(page, perPage);
   }
 
   @Get('/outgoing/:txnHash')
