@@ -3,8 +3,6 @@ import { CreateIncomingTransactionDto, CreateOutgoingTransactionDto } from './dt
 import { PrismaService } from 'nestjs-prisma';
 import { WalletService } from 'src/wallet/wallet.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { OutgoingTransactionEvent } from 'src/events/outgoing.txn.create.event';
-import { IncomingTransactionEvent } from 'src/events/incoming.txn.create.event';
 
 @Injectable()
 export class TransactionsService {
@@ -139,7 +137,7 @@ export class TransactionsService {
   findTxnsWithoutGasFee() {
     return this.prisma.outgoingTransactions.findMany({
       where: {
-        gasFee: undefined
+        gasFee: "0"
       }
     })
   }
@@ -164,14 +162,6 @@ export class TransactionsService {
         userId,
       }
     })
-
-    // const event = new OutgoingTransactionEvent()
-    // event.data = txn;
-    // event.walletAddress = createTransactionDto.walletId
-    // this.eventEmitter.emit(
-    //   'outgoingtxn.created',
-    //   event
-    // );
 
     let idrtBalance = 0;
     const preBalanceFromDB = await this.prisma.wallet.findUnique({
@@ -258,7 +248,6 @@ export class TransactionsService {
       }
     })
 
-
     return incomingTxns
   }
 
@@ -271,7 +260,6 @@ export class TransactionsService {
       },
       include: {
         user: true,
-
       }
     })
 
