@@ -79,9 +79,6 @@ model Settlements {
   settlementAmount  String
   settlementAddress String
   currencySymbol    String
-  commissionAmount  String
-  commissionTxnHash String
-  commissionAddress String
   totalGasFeePaid   String
   fromWallet        Wallet   @relation(fields: [fromWalletAddress], references: [address])
   fromWalletAddress String
@@ -120,6 +117,7 @@ model IncomingTransactions {
   user           User?                     @relation(fields: [userId], references: [id])
   amount         String
   gasFee         String?
+  commission     String
   currencySymbol String
   walletId       String?
   wallet         Wallet?                   @relation(fields: [walletId], references: [address])

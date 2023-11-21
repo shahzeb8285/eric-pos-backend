@@ -3,6 +3,7 @@ import { CreateIncomingTransactionDto, CreateOutgoingTransactionDto } from './dt
 import { PrismaService } from 'nestjs-prisma';
 import { WalletService } from 'src/wallet/wallet.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { SETTINGS } from 'src/settings';
 
 @Injectable()
 export class TransactionsService {
@@ -12,41 +13,46 @@ export class TransactionsService {
   }
 
   async createIncoming(createTransactionDto: CreateIncomingTransactionDto) {
-    this.logger.log({ level: "info", message: `Creating incoming transaction ${createTransactionDto.txnHash} for wallet ${createTransactionDto.walletId}` });
-    const userId = await this.walletService.getUserIdByWallet(createTransactionDto.walletId);
+    return this.prisma.$transaction(async (prisma) => {
+      this.logger.log({ level: "info", message: `Creating incoming transaction ${createTransactionDto.txnHash} for wallet ${createTransactionDto.walletId}` });
+      
+      const userId = await this.walletService.getUserIdByWallet(createTransactionDto.walletId);
+      const commission = this.calculateCommission(createTransactionDto.amount).toString();
 
-    const txn = await this.prisma.incomingTransactions.create({
-      data: {
-        ...createTransactionDto,
-        userId,
-        isOrphanTxn: userId ? false : true
+      const txn = await this.prisma.incomingTransactions.create({
+        data: {
+          ...createTransactionDto,
+          commission,
+          userId,
+          isOrphanTxn: userId ? false : true
+        }
+      });
+
+      const preBalanceFromDB = await this.prisma.wallet.findUnique({
+        where: {
+          address:createTransactionDto.walletId
+        },
+        select: {
+          idrtBalance:true
+        }
+      })
+
+      let idrtBalance = 0;
+      if (preBalanceFromDB && preBalanceFromDB.idrtBalance) {
+          idrtBalance = Number(preBalanceFromDB.idrtBalance)
       }
+      idrtBalance += Number(createTransactionDto.amount);
+      await this.prisma.wallet.update({
+        data: {
+          idrtBalance: idrtBalance.toString()
+        },
+        where: {
+          address:createTransactionDto.walletId
+        }
+      })
+
+      return txn;
     });
-
-    const preBalanceFromDB = await this.prisma.wallet.findUnique({
-      where: {
-        address:createTransactionDto.walletId
-      },
-      select: {
-        idrtBalance:true
-      }
-    })
-
-    let idrtBalance = 0;
-    if (preBalanceFromDB && preBalanceFromDB.idrtBalance) {
-        idrtBalance = Number(preBalanceFromDB.idrtBalance)
-    }
-    idrtBalance += Number(createTransactionDto.amount);
-    await this.prisma.wallet.update({
-      data: {
-        idrtBalance: idrtBalance.toString()
-      },
-      where: {
-        address:createTransactionDto.walletId
-      }
-    })
-
-    return txn
   }
 
   async findAllIncoming(page: number = 1, perPage: number = 10) {
@@ -334,10 +340,11 @@ export class TransactionsService {
     return summarizedData;
   }
 
-  calculateCommission = (amount: string): bigint => {
-    const commissionRate = 0.015;
+  calculateCommission(amount: string): bigint {
+    const commissionRate = BigInt(SETTINGS.COMMISSION_RATE);
+    const minCommission = BigInt(SETTINGS.MIN_COMMISSION);
     const amountBigInt = BigInt(amount);
-    const commission = amountBigInt * BigInt(Math.floor(commissionRate * 10000)) / BigInt(10000);
-    return commission;
-  };
+    const commission = amountBigInt * commissionRate;
+    return commission > minCommission ? commission : minCommission;
+  }
 }
