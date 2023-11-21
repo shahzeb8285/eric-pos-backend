@@ -46,7 +46,6 @@ export class TransactionsService {
       }
     })
 
- 
     return txn
   }
 
@@ -94,7 +93,6 @@ export class TransactionsService {
     })
   }
 
-
   async getAllTransactionByUser(userId: string) {
     const incomingTxns = await this.prisma.incomingTransactions.findMany({
       where: {
@@ -134,6 +132,7 @@ export class TransactionsService {
       outgoingTxns
     }
   }
+
   findTxnsWithoutGasFee() {
     return this.prisma.outgoingTransactions.findMany({
       where: {
@@ -251,7 +250,6 @@ export class TransactionsService {
     return incomingTxns
   }
 
-
   getAllUnAckTransaction() {
     return this.prisma.incomingTransactions.findMany({
       where: {
@@ -262,7 +260,6 @@ export class TransactionsService {
         user: true,
       }
     })
-
   }
 
   markTxnAsAck(txnHash: string) {
@@ -274,7 +271,6 @@ export class TransactionsService {
         callbackStatus: "ACK"
       }
     })
-
   }
 
   async getDashboardStats() {
@@ -307,6 +303,7 @@ export class TransactionsService {
         // Incoming transaction
         acc[date].noOfInTxn += 1;
         acc[date].inAmount += BigInt(transaction.amount);
+        // todo: use db value instead of calculate on the fly
         acc[date].inCommission += this.calculateCommission(transaction.amount);
         // acc[date].inGasFee (no gas fee for incoming txn)
       } else {

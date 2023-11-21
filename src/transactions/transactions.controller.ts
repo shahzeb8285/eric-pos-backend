@@ -1,11 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseIntPipe, Logger } from '@nestjs/common';
+import { Controller, Get, Param, Query, ParseIntPipe, Logger } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
 import { ApiTags } from '@nestjs/swagger';
 import { Cron } from '@nestjs/schedule';
 import { MerchantService } from 'src/merchant/merchant.service';
-import axios, { AxiosResponse } from 'axios'
-import { HttpService } from '@nestjs/axios';
-import { catchError, firstValueFrom, lastValueFrom, map } from 'rxjs';
 
 @Controller('transactions')
 @ApiTags("transactions")
