@@ -57,19 +57,15 @@ export class TransactionsController {
     return this.transactionsService.findAllOrphan();
   }
 
-
-
   @Get("/byUser/:userId")
   getTransactionsByUser(@Param('userId') userId: string) {
     return this.transactionsService.getAllTransactionByUser(userId)
   }
 
-
   @Get("/byWallet/:wallet")
   getTransactionsByWallet(@Param('wallet') wallet: string) {
     return this.transactionsService.getAllTransactionByWallet(wallet)
   }
-
 
   @Cron('*/5 * * * *')
   async processCallbacks() {
@@ -88,29 +84,37 @@ export class TransactionsController {
 
   async sendCallback(txn) {
     const merchantCallBackUrl = await this.merchantService.getMerchantCallBackUrl(txn.user.merchantId);
+  
     if (merchantCallBackUrl) {
       const payload = {
         txnHash: txn.txnHash,
         txnTime: txn.createdAt,
         username: txn.user.username,
         amount: txn.amount,
-      }
+      };
+  
       try {
-
-        const response = await fetch(merchantCallBackUrl, {
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Callback request timed out')), 3000)
+        );
+  
+        const fetchPromise = fetch(merchantCallBackUrl, {
           method: 'POST',
-          body: JSON.stringify(payload)
-        })
-
-        if (response.status === 200 || response.status === 201) {
-          await this.transactionsService.markTxnAsAck(txn.txnHash)
+          body: JSON.stringify(payload),
+        });
+  
+        const response = await Promise.race([fetchPromise, timeoutPromise]);
+  
+        if (response instanceof Response) {
+          if (response.status === 200 || response.status === 201) {
+            await this.transactionsService.markTxnAsAck(txn.txnHash);
+          }
+        } else {
+          this.logger.error('Invalid response type:', response);
         }
-
       } catch (err) {
+        this.logger.error('Error sending callback:', err);
       }
-
-
-
     }
   }
 
