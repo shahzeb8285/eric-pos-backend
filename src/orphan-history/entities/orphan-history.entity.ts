@@ -1,1 +1,1 @@
-export class OrphanHistory {}
+export class OrphanHistory { }

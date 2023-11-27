@@ -3,8 +3,7 @@ import { CreateIncomingTransactionDto, CreateOutgoingTransactionDto } from './dt
 import { PrismaService } from 'nestjs-prisma';
 import { WalletService } from 'src/wallet/wallet.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { OutgoingTransactionEvent } from 'src/events/outgoing.txn.create.event';
-import { IncomingTransactionEvent } from 'src/events/incoming.txn.create.event';
+import { SETTINGS } from 'src/settings';
 
 @Injectable()
 export class TransactionsService {
@@ -14,50 +13,79 @@ export class TransactionsService {
   }
 
   async createIncoming(createTransactionDto: CreateIncomingTransactionDto) {
-    this.logger.log({ level: "info", message: `Creating incoming transaction ${createTransactionDto.txnHash} for wallet ${createTransactionDto.walletId}` });
-    const userId = await this.walletService.getUserIdByWallet(createTransactionDto.walletId);
+    return this.prisma.$transaction(async (prisma) => {
+      this.logger.log({ level: "info", message: `Creating incoming transaction ${createTransactionDto.txnHash} for wallet ${createTransactionDto.walletId}` });
+      
+      const userId = await this.walletService.getUserIdByWallet(createTransactionDto.walletId);
+      const commission = this.calculateCommission(createTransactionDto.amount).toString();
 
-    const txn = await this.prisma.incomingTransactions.create({
-      data: {
-        ...createTransactionDto,
-        userId,
-        isOrphanTxn: userId ? false : true
+      const txn = await this.prisma.incomingTransactions.create({
+        data: {
+          ...createTransactionDto,
+          commission,
+          userId,
+          isOrphanTxn: userId ? false : true
+        }
+      });
+
+      const preBalanceFromDB = await this.prisma.wallet.findUnique({
+        where: {
+          address:createTransactionDto.walletId
+        },
+        select: {
+          idrtBalance:true
+        }
+      })
+
+      let idrtBalance = 0;
+      if (preBalanceFromDB && preBalanceFromDB.idrtBalance) {
+          idrtBalance = Number(preBalanceFromDB.idrtBalance)
       }
+      idrtBalance += Number(createTransactionDto.amount);
+      await this.prisma.wallet.update({
+        data: {
+          idrtBalance: idrtBalance.toString()
+        },
+        where: {
+          address:createTransactionDto.walletId
+        }
+      })
+
+      return txn;
     });
-
-    const preBalanceFromDB = await this.prisma.wallet.findUnique({
-      where: {
-        address:createTransactionDto.walletId
-      },
-      select: {
-        idrtBalance:true
-      }
-    })
-
-    let idrtBalance = 0;
-    if (preBalanceFromDB && preBalanceFromDB.idrtBalance) {
-        idrtBalance = Number(preBalanceFromDB.idrtBalance)
-    }
-    idrtBalance += Number(createTransactionDto.amount);
-    await this.prisma.wallet.update({
-      data: {
-        idrtBalance: idrtBalance.toString()
-      },
-      where: {
-        address:createTransactionDto.walletId
-      }
-    })
-
- 
-    return txn
   }
 
-  findAllIncoming() {
-    return this.prisma.incomingTransactions.findMany({
+  async findAllIncoming(page: number = 1, perPage: number = 10) {
+    const startIndex = (page - 1) * perPage;
+
+    const incomingTransactions = await this.prisma.incomingTransactions.findMany({
+      skip: startIndex,
+      take: perPage,
       include: {
-        user: true
+        user: true,
       },
-    })
+    });
+
+    const totalItems = await this.prisma.incomingTransactions.count(); // Get the total count of incoming transactions
+
+    const formattedTransactions = incomingTransactions.map(transaction => ({
+      createdAt: transaction.createdAt,
+      txnHash: transaction.txnHash,
+      fromAddress: transaction.fromAddress,
+      username: transaction.user.username,
+      amount: transaction.amount,
+      gasFee: transaction.gasFee,
+      currencySymbol: transaction.currencySymbol,
+      walletId: transaction.walletId,
+      isOrphanTxn: transaction.isOrphanTxn,
+    }));
+
+    return {
+      data: formattedTransactions,
+      page,
+      perPage,
+      totalItems,
+    };
   }
 
   updateGasFee(txnHash: string, gasFee: string) {
@@ -70,7 +98,6 @@ export class TransactionsService {
       }
     })
   }
-
 
   async getAllTransactionByUser(userId: string) {
     const incomingTxns = await this.prisma.incomingTransactions.findMany({
@@ -111,10 +138,11 @@ export class TransactionsService {
       outgoingTxns
     }
   }
+
   findTxnsWithoutGasFee() {
     return this.prisma.outgoingTransactions.findMany({
       where: {
-        gasFee: undefined
+        gasFee: "0"
       }
     })
   }
@@ -139,14 +167,6 @@ export class TransactionsService {
         userId,
       }
     })
-
-    // const event = new OutgoingTransactionEvent()
-    // event.data = txn;
-    // event.walletAddress = createTransactionDto.walletId
-    // this.eventEmitter.emit(
-    //   'outgoingtxn.created',
-    //   event
-    // );
 
     let idrtBalance = 0;
     const preBalanceFromDB = await this.prisma.wallet.findUnique({
@@ -173,12 +193,36 @@ export class TransactionsService {
     return txn;
   }
 
-  findAllOutgoing() {
-    return this.prisma.outgoingTransactions.findMany({
+  async findAllOutgoing(page: number = 1, perPage: number = 10) {
+    const startIndex = (page - 1) * perPage;
+
+    const outgoingTransactions = await this.prisma.outgoingTransactions.findMany({
+      skip: startIndex,
+      take: perPage,
       include: {
-        user: true
+        user: true,
       },
-    })
+    });
+
+    const totalItems = await this.prisma.outgoingTransactions.count(); // Get the total count of outgoing transactions
+
+    const formattedTransactions = outgoingTransactions.map(transaction => ({
+      createdAt: transaction.createdAt,
+      txnHash: transaction.txnHash,
+      toAddress: transaction.toAddress,
+      username: transaction.user.username,
+      amount: transaction.amount,
+      gasFee: transaction.gasFee,
+      currencySymbol: transaction.currencySymbol,
+      walletId: transaction.walletId,
+    }));
+
+    return {
+      data: formattedTransactions,
+      page,
+      perPage,
+      totalItems,
+    };
   }
 
   findOneOutgoing(txnHash: string) {
@@ -209,10 +253,8 @@ export class TransactionsService {
       }
     })
 
-
     return incomingTxns
   }
-
 
   getAllUnAckTransaction() {
     return this.prisma.incomingTransactions.findMany({
@@ -222,10 +264,8 @@ export class TransactionsService {
       },
       include: {
         user: true,
-
       }
     })
-
   }
 
   markTxnAsAck(txnHash: string) {
@@ -237,7 +277,6 @@ export class TransactionsService {
         callbackStatus: "ACK"
       }
     })
-
   }
 
   async getDashboardStats() {
@@ -270,6 +309,7 @@ export class TransactionsService {
         // Incoming transaction
         acc[date].noOfInTxn += 1;
         acc[date].inAmount += BigInt(transaction.amount);
+        // todo: use db value instead of calculate on the fly
         acc[date].inCommission += this.calculateCommission(transaction.amount);
         // acc[date].inGasFee (no gas fee for incoming txn)
       } else {
@@ -300,10 +340,11 @@ export class TransactionsService {
     return summarizedData;
   }
 
-  calculateCommission = (amount: string): bigint => {
-    const commissionRate = 0.015;
+  calculateCommission(amount: string): bigint {
+    const commissionRate = BigInt(SETTINGS.COMMISSION_RATE);
+    const minCommission = BigInt(SETTINGS.MIN_COMMISSION);
     const amountBigInt = BigInt(amount);
-    const commission = amountBigInt * BigInt(Math.floor(commissionRate * 10000)) / BigInt(10000);
-    return commission;
-  };
+    const commission = amountBigInt * commissionRate;
+    return commission > minCommission ? commission : minCommission;
+  }
 }

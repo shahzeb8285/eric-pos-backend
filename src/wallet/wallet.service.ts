@@ -268,6 +268,8 @@ export class WalletService {
   }
 
   findAllUnsettledWallets() {
+    // todo1: check sql
+    // todo2: what if wallet is unassigned?
     return this.prisma.wallet.findMany({
       where: {
         isReadyForSettlement: true,

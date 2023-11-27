@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Logger, UseGuards,Request, UnauthorizedException,NotFoundException, Query, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Param, Logger, UseGuards, Request, UnauthorizedException, NotFoundException, Query, BadRequestException } from '@nestjs/common';
 import { WalletService } from './wallet.service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { OnEvent } from '@nestjs/event-emitter';
@@ -14,14 +14,12 @@ export class WalletController {
   constructor(private readonly walletService: WalletService,) {
 
     this.walletService.getNonAssignedWallet()
-   }
+  }
 
   @OnEvent('wallet.balanceExceeds')
   async handleNewWalletAddEvent(payload: WalletBalanceExceedsEvent) {
     await this.walletService.markSettlement(payload.walletAddress, true)
   }
-
- 
 
   @UseGuards(AuthGuard)
   @Get()
@@ -51,16 +49,13 @@ export class WalletController {
         if (wallet.user && wallet.user.merchantId === req.user.id) {
           return wallet
         } else {
-          throw new UnauthorizedException() 
-
+          throw new UnauthorizedException()
         }
       }
       return wallet
     } else {
-      throw new NotFoundException() 
+      throw new NotFoundException()
     }
-   
-   
   }
 
   @Get("/assignHistory")
@@ -70,7 +65,7 @@ export class WalletController {
   ) {
 
     if (!query.userId && !query.walletAddress) {
-      throw new BadRequestException("include userId or walletAddress as params") 
+      throw new BadRequestException("include userId or walletAddress as params")
     }
 
     // if (!req.user.isAdmin) {
@@ -78,15 +73,13 @@ export class WalletController {
     // }
 
     if (query.userId) {
-      return  await this.walletService.getWalletAssignmentByUser(query.userId)
-    } 
-    return  await this.walletService.getWalletAssignmentByWallet(query.userId)
+      return await this.walletService.getWalletAssignmentByUser(query.userId)
+    }
+    return await this.walletService.getWalletAssignmentByWallet(query.userId)
   }
 
-  // todo: Shahzeb, add auth guard and (if user is merchant, return only wallets that belong to merchant)
-  // reply : Wallet balances are pretty much open so we dont need to put auth guard to it 
   @Get("/balance/:address")
-  getbalance(@Request() req,@Param('address') address: string) {
+  getbalance(@Request() req, @Param('address') address: string) {
     this.logger.debug("getbalance for address ${address} is called by xxxx")
 
     return this.walletService.getBalancesByWallet(address)

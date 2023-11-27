@@ -4,6 +4,8 @@ const SETTINGS = {
     BNB_BUFFER: 1000,
     MIN_BNB_BALANCE: 200000000000000000,
     BNBLOW_ALERT_MAIL:"test@test.com",
+    COMMISSION_RATE: 0.015,
+    MIN_COMMISSION: 200000000,
     NATIVE:  {
         symbol: "BNB",
         decimals:18

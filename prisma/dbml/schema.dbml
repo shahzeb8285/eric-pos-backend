@@ -65,9 +65,6 @@ Table Settlements {
   settlementAmount String [not null]
   settlementAddress String [not null]
   currencySymbol String [not null]
-  commissionAmount String [not null]
-  commissionTxnHash String [not null]
-  commissionAddress String [not null]
   totalGasFeePaid String [not null]
   fromWallet Wallet [not null]
   fromWalletAddress String [not null]
@@ -96,6 +93,7 @@ Table IncomingTransactions {
   user User
   amount String [not null]
   gasFee String
+  commission String [not null]
   currencySymbol String [not null]
   walletId String
   wallet Wallet

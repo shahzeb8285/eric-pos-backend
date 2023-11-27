@@ -7,6 +7,7 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { WalletCreatedEvent } from 'src/events/wallet.event';
 import { TransactionsService } from 'src/transactions/transactions.service';
 import { CreateIncomingTransactionDto, CreateOutgoingTransactionDto } from 'src/transactions/dto/create-transaction.dto';
+
 @Injectable()
 export class WatcherService {
     private logger = new Logger(WatcherService.name);
@@ -31,6 +32,7 @@ export class WatcherService {
                 contracts.push(new ethers.Contract(token.address, IERC20ABI, provider))
             }
         }
+
         return contracts
     }
 
@@ -45,6 +47,7 @@ export class WatcherService {
         if (token) {
             return token.symbol
         }
+
         return contractAddress;
     }
 
@@ -59,9 +62,8 @@ export class WatcherService {
             payload.fromAddress = from;
             payload.walletId = to;
             payload.txnHash = transactionHash;
-            payload.gasFee = "-"
+            payload.gasFee = "0"
             await this.transactionService.createIncoming(payload)
-            // todo: Shahzeb invoke merchant call back 
         } else if (this.isValidWallet(from)) {
             this.logger.log({ level: "info", message: `Outgoing Transaction ${transactionHash} is valid` });
             const payload: CreateOutgoingTransactionDto = new CreateOutgoingTransactionDto();
@@ -70,7 +72,7 @@ export class WatcherService {
             payload.toAddress = to;
             payload.walletId = from;
             payload.txnHash = transactionHash;
-            payload.gasFee = "-"
+            payload.gasFee = "0"
             await this.transactionService.createOutgoing(payload)
         }
     }

@@ -13,16 +13,16 @@ async function bootstrap() {
         // file on daily rotation (error only)
         new transports.DailyRotateFile({
        // %DATE will be replaced by the current date
-          filename: `logs/%DATE%-error.log`, 
+          filename: `logs/error-%DATE%.log`, 
           level: 'error',
           format: format.combine(format.timestamp(), format.json()),
-          datePattern: 'YYYY-MM-DD',
+          datePattern: 'YYYYMMDD',
           zippedArchive: false, // don't want to zip our logs
           maxFiles: '30d', // will keep log until they are older than 30 days
         }),
         // same for all levels
         new transports.DailyRotateFile({
-          filename: `logs/%DATE%-combined.log`,
+          filename: `logs/combined-%DATE%.log`,
           level: 'debug',
           format: format.combine(format.timestamp(), format.json()),
           datePattern: 'YYYY-MM-DD',

@@ -1,11 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Logger } from '@nestjs/common';
+import { Controller, Get, Param, Query, ParseIntPipe, Logger } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
 import { ApiTags } from '@nestjs/swagger';
 import { Cron } from '@nestjs/schedule';
 import { MerchantService } from 'src/merchant/merchant.service';
-import axios, { AxiosResponse } from 'axios'
-import { HttpService } from '@nestjs/axios';
-import { catchError, firstValueFrom, lastValueFrom, map } from 'rxjs';
 
 @Controller('transactions')
 @ApiTags("transactions")
@@ -22,8 +19,11 @@ export class TransactionsController {
   }
 
   @Get("/incoming")
-  findAllIncoming() {
-    return this.transactionsService.findAllIncoming();
+  findAllIncoming(
+    @Query('page', ParseIntPipe) page: number = 1, // default to page 1
+    @Query('perPage', ParseIntPipe) perPage: number = 10, // default to 10 items per page
+  ) {
+    return this.transactionsService.findAllIncoming(page, perPage);
   }
 
   @Get('/incoming/:txnHash')
@@ -32,8 +32,11 @@ export class TransactionsController {
   }
 
   @Get("/outgoing")
-  findAllOutgoing() {
-    return this.transactionsService.findAllOutgoing();
+  findAllOutgoing(
+    @Query('page', ParseIntPipe) page: number = 1, // default to page 1
+    @Query('perPage', ParseIntPipe) perPage: number = 10, // default to 10 items per page
+  ) {
+    return this.transactionsService.findAllOutgoing(page, perPage);
   }
 
   @Get('/outgoing/:txnHash')
@@ -51,19 +54,15 @@ export class TransactionsController {
     return this.transactionsService.findAllOrphan();
   }
 
-
-
   @Get("/byUser/:userId")
   getTransactionsByUser(@Param('userId') userId: string) {
     return this.transactionsService.getAllTransactionByUser(userId)
   }
 
-
   @Get("/byWallet/:wallet")
   getTransactionsByWallet(@Param('wallet') wallet: string) {
     return this.transactionsService.getAllTransactionByWallet(wallet)
   }
-
 
   @Cron('*/5 * * * *')
   async processCallbacks() {
@@ -82,29 +81,37 @@ export class TransactionsController {
 
   async sendCallback(txn) {
     const merchantCallBackUrl = await this.merchantService.getMerchantCallBackUrl(txn.user.merchantId);
+  
     if (merchantCallBackUrl) {
       const payload = {
         txnHash: txn.txnHash,
         txnTime: txn.createdAt,
         username: txn.user.username,
         amount: txn.amount,
-      }
+      };
+  
       try {
-
-        const response = await fetch(merchantCallBackUrl, {
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Callback request timed out')), 3000)
+        );
+  
+        const fetchPromise = fetch(merchantCallBackUrl, {
           method: 'POST',
-          body: JSON.stringify(payload)
-        })
-
-        if (response.status === 200 || response.status === 201) {
-          await this.transactionsService.markTxnAsAck(txn.txnHash)
+          body: JSON.stringify(payload),
+        });
+  
+        const response = await Promise.race([fetchPromise, timeoutPromise]);
+  
+        if (response instanceof Response) {
+          if (response.status === 200 || response.status === 201) {
+            await this.transactionsService.markTxnAsAck(txn.txnHash);
+          }
+        } else {
+          this.logger.error('Invalid response type:', response);
         }
-
       } catch (err) {
+        this.logger.error('Error sending callback:', err);
       }
-
-
-
     }
   }
 
