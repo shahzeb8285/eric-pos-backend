@@ -8,10 +8,13 @@
     "allowSyntheticDefaultImports": true,
     "target": "ES2021",
     "resolveJsonModule": true,
+    "baseUrl": ".",
 
+    "paths": {
+      "src/*": ["src/*"]
+    },
     "sourceMap": true,
     "outDir": "./dist",
-    "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": false,
